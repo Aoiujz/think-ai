@@ -58,4 +58,33 @@ $client->images()->inpainting($params);
 $client->images()->outpainting($params);
 ```
 
+### 决策
+```php
+use think\ai\Client;
+
+$client = new Client('YOUR_TOKEN');
+
+$result = $client->decision()->evaluate([
+    'model' => 'jev-latest',
+    'state' => 'Help! My payouts have been failing for 3 days.',
+    'questions' => [
+        'is_urgent' => [
+            'type' => 'noul',
+            'instructions' => 'Does this convey urgency?',
+        ],
+        'department' => [
+            'type' => 'choice',
+            'instructions' => 'Which team should handle this?',
+            'criteria' => [
+                'billing'   => 'Payments, invoicing, refunds',
+                'technical' => 'Bugs, outages, integrations',
+            ],
+        ],
+    ],
+]);
+
+// $result['answers']['is_urgent']['noul'] => 0.95
+// $result['answers']['department']['choice'] => 'billing'
+```
+
 ...其他用法类似

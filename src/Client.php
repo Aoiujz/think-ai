@@ -11,6 +11,7 @@ use GuzzleHttp\Utils;
 use think\ai\api\Audio;
 use think\ai\api\Avatar;
 use think\ai\api\Chat;
+use think\ai\api\Decision;
 use think\ai\api\Embeddings;
 use think\ai\api\Images;
 use think\ai\api\Model;
@@ -83,6 +84,11 @@ class Client
     public function rerank()
     {
         return new Rerank($this);
+    }
+
+    public function decision()
+    {
+        return new Decision($this);
     }
 
     public function plugin()
