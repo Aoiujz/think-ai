@@ -11,14 +11,28 @@ npm install @topthink/think-ai
 ```ts
 import { Client, EventStream } from '@topthink/think-ai';
 const client = new Client('YOUR_TOKEN', { endpoint: 'https://ai.topthink.com/', timeout: 300 });
-const result = await client.chat.completions({ model: 'YOUR_CHAT_MODEL', messages: [{ role: 'user', content: '你好' }] });
+const result = await client.chat.completions({
+  model: 'YOUR_CHAT_MODEL',
+  messages: [{ role: 'user', content: '你好' }],
+});
 if (result instanceof EventStream) {
-  try { for await (const event of result) console.log(event); }
-  finally { await result.close(); }
-} else console.log(result);
+  try {
+    for await (const event of result) {
+      console.log(event);
+    }
+  } finally {
+    await result.close();
+  }
+} else {
+  console.log(result);
+}
 
 // Chat 默认 stream=true；显式 false 请求 JSON。仍按实际 Content-Type 判别响应。
-await client.chat.completions({ model: 'YOUR_CHAT_MODEL', messages: [{ role: 'user', content: '你好' }], stream: false });
+await client.chat.completions({
+  model: 'YOUR_CHAT_MODEL',
+  messages: [{ role: 'user', content: '你好' }],
+  stream: false,
+});
 ```
 
 ```js
@@ -80,7 +94,10 @@ Avatar 第二参数默认 false；true 等待最多 300 秒；正数指定秒数
 
 ```ts
 const controller = new AbortController();
-const result = await client.responses.create({model:'CHAT',input:'你好'}, {signal:controller.signal, timeout:60});
+const result = await client.responses.create(
+  { model: 'CHAT', input: '你好' },
+  { signal: controller.signal, timeout: 60 },
+);
 controller.abort(); // 取消未完成的请求/流。
 ```
 
@@ -93,3 +110,5 @@ npm test
 npm pack --dry-run
 npm run check:package
 ```
+
+开发依赖固定 Prettier 版本，采用 2 空格、单引号及 100 列换行参考宽度；运行时代码不依赖 Prettier。在本目录执行 `npm run format` 修正源码、测试和仓库 JS 工具的格式，`npm run format:check` 进行只读检查。CI 在测试前执行相同检查；编辑器可读取根目录 `.editorconfig` 和 `.prettierrc.json`。

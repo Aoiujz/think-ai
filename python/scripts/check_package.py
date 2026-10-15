@@ -3,6 +3,7 @@
 Run with the development environment's Python; --pip-python is useful for
 bundled runtimes without pip. No package is uploaded or published.
 """
+
 import argparse
 import os
 from pathlib import Path
@@ -23,18 +24,28 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--pip-python", default=sys.executable)
 args = parser.parse_args()
 
+
 def run(command, cwd):
     environment = os.environ.copy()
     environment.pop("PYTHONPATH", None)
     subprocess.run(command, cwd=cwd, env=environment, check=True)
+
 
 workspace = project / ".package-check"
 workspace.mkdir(exist_ok=True)
 environment = os.environ.copy()
 environment["TMP"] = str(workspace)
 environment["TEMP"] = str(workspace)
-subprocess.run([sys.executable, "-m", "build", str(project), "--no-isolation"], cwd=project, env=environment, check=True)
-artifacts = [project / f"dist/{distribution}-{version}-py3-none-any.whl", project / f"dist/{distribution}-{version}.tar.gz"]
+subprocess.run(
+    [sys.executable, "-m", "build", str(project), "--no-isolation"],
+    cwd=project,
+    env=environment,
+    check=True,
+)
+artifacts = [
+    project / f"dist/{distribution}-{version}-py3-none-any.whl",
+    project / f"dist/{distribution}-{version}.tar.gz",
+]
 for artifact in artifacts:
     assert artifact.is_file(), artifact
     if artifact.suffix == ".whl":
@@ -51,7 +62,16 @@ for artifact in artifacts:
         executable = target / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
         # Install build backend separately so sdist is built without fetching an
         # untracked isolated backend; wheel installation uses the same process.
-        base = [args.pip_python, "-m", "pip", "--python", str(executable), "install", "--index-url", "https://pypi.org/simple"]
+        base = [
+            args.pip_python,
+            "-m",
+            "pip",
+            "--python",
+            str(executable),
+            "install",
+            "--index-url",
+            "https://pypi.org/simple",
+        ]
         run(base + ["hatchling>=1.26"], consumer)
         run(base + ["--no-build-isolation", str(artifact)], consumer)
         code = f"import pathlib, thinkai; from thinkai import Client, AsyncClient; assert thinkai.__version__ == {version!r}; assert 'site-packages' in str(pathlib.Path(thinkai.__file__).resolve()); assert hasattr(Client, 'close'); print(thinkai.__file__)"

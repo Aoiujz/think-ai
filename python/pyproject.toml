@@ -13,7 +13,12 @@ authors = [{name = "TOPThink"}]
 dependencies = ["httpx>=0.27,<1"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10", "build>=1.2", "hatchling>=1.26"]
+dev = [
+  "pytest>=8,<10",
+  "build>=1.2",
+  "hatchling>=1.26",
+  "ruff==0.17.0",
+]
 publish = ["twine>=6"]
 
 [tool.hatch.build.targets.wheel]
@@ -21,3 +26,13 @@ packages = ["src/thinkai"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+required-version = "==0.17.0"
+line-length = 100
+target-version = "py311"
+extend-exclude = [".tools", ".package-check", "dist", "*.md"]
+
+[tool.ruff.format]
+docstring-code-format = false
+line-ending = "lf"

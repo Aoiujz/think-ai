@@ -1,4 +1,5 @@
 """Resource methods follow the existing PHP SDK; JSON fields are never filtered."""
+
 from __future__ import annotations
 import asyncio
 import time
@@ -90,7 +91,12 @@ class Avatar(Resource):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise OperationTimeout("Avatar wait timed out")
-            result = self._client._request("POST", "avatar/query", body={"model": params["model"], "id": task_id}, timeout=min(self._client.timeout, remaining))
+            result = self._client._request(
+                "POST",
+                "avatar/query",
+                body={"model": params["model"], "id": task_id},
+                timeout=min(self._client.timeout, remaining),
+            )
             status = result.get("status") if isinstance(result, dict) else None
             if status in ("success", "fail"):
                 return result
@@ -129,12 +135,12 @@ class Decision(Resource):
 
 
 class Plugin(Resource):
-    def list(self, params = None):
+    def list(self, params=None):
         return self._client._request("GET", "plugin", query=params)
 
 
 class Model(Resource):
-    def list(self, params = None):
+    def list(self, params=None):
         return self._client._request("GET", "model", query=params)
 
     def show(self, type, code):
@@ -142,7 +148,7 @@ class Model(Resource):
 
 
 class Skill(Resource):
-    def list(self, params = None):
+    def list(self, params=None):
         return self._client._request("GET", "skill", query=params)
 
     def categories(self):
@@ -169,25 +175,44 @@ class Sandbox(Resource):
         return self._client._request("GET", f"sandbox/{_segment(id)}/read", query={"path": path})
 
     def write_file(self, id, path, content):
-        return self._client._request("POST", f"sandbox/{_segment(id)}/write", body={"path": path, "content": content})
+        return self._client._request(
+            "POST", f"sandbox/{_segment(id)}/write", body={"path": path, "content": content}
+        )
 
     def edit_file(self, id, path, old_str, new_str=""):
-        return self._client._request("POST", f"sandbox/{_segment(id)}/edit", body={"path": path, "old_str": old_str, "new_str": new_str})
+        return self._client._request(
+            "POST",
+            f"sandbox/{_segment(id)}/edit",
+            body={"path": path, "old_str": old_str, "new_str": new_str},
+        )
 
     def download_file(self, id, path):
-        return self._client._request("GET", f"sandbox/{_segment(id)}/download", query={"path": path}, binary=True)
+        return self._client._request(
+            "GET", f"sandbox/{_segment(id)}/download", query={"path": path}, binary=True
+        )
 
     def run_code(self, id, code, files=None):
-        return self._client._request("POST", f"sandbox/{_segment(id)}/code", body={"code": code, "files": [] if files is None else files})
+        return self._client._request(
+            "POST",
+            f"sandbox/{_segment(id)}/code",
+            body={"code": code, "files": [] if files is None else files},
+        )
 
     def run_command(self, id, command, stream=False):
-        return self._client._request("POST", f"sandbox/{_segment(id)}/command", body={"command": command, "stream": stream})
+        return self._client._request(
+            "POST", f"sandbox/{_segment(id)}/command", body={"command": command, "stream": stream}
+        )
 
     def upload_file(self, id, path, file):
         owned = isinstance(file, (str, Path))
         content = open(file, "rb") if owned else file
         try:
-            return self._client._request("POST", f"sandbox/{_segment(id)}/upload", data={"path": path}, files={"file": (Path(path).name, content, "application/octet-stream")})
+            return self._client._request(
+                "POST",
+                f"sandbox/{_segment(id)}/upload",
+                data={"path": path},
+                files={"file": (Path(path).name, content, "application/octet-stream")},
+            )
         finally:
             if owned:
                 content.close()
@@ -257,7 +282,12 @@ class AsyncAvatar(Resource):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise OperationTimeout("Avatar wait timed out")
-            result = await self._client._request("POST", "avatar/query", body={"model": params["model"], "id": task_id}, timeout=min(self._client.timeout, remaining))
+            result = await self._client._request(
+                "POST",
+                "avatar/query",
+                body={"model": params["model"], "id": task_id},
+                timeout=min(self._client.timeout, remaining),
+            )
             status = result.get("status") if isinstance(result, dict) else None
             if status in ("success", "fail"):
                 return result
@@ -296,12 +326,12 @@ class AsyncDecision(Resource):
 
 
 class AsyncPlugin(Resource):
-    async def list(self, params = None):
+    async def list(self, params=None):
         return await self._client._request("GET", "plugin", query=params)
 
 
 class AsyncModel(Resource):
-    async def list(self, params = None):
+    async def list(self, params=None):
         return await self._client._request("GET", "model", query=params)
 
     async def show(self, type, code):
@@ -309,14 +339,16 @@ class AsyncModel(Resource):
 
 
 class AsyncSkill(Resource):
-    async def list(self, params = None):
+    async def list(self, params=None):
         return await self._client._request("GET", "skill", query=params)
 
     async def categories(self):
         return await self._client._request("GET", "skill/category")
 
     async def download(self, path):
-        return await self._client._request("GET", "skill/download", query={"path": path}, binary=True)
+        return await self._client._request(
+            "GET", "skill/download", query={"path": path}, binary=True
+        )
 
 
 class AsyncSandbox(Resource):
@@ -330,32 +362,54 @@ class AsyncSandbox(Resource):
         return await self._client._request("DELETE", f"sandbox/{_segment(id)}")
 
     async def list_file(self, id, path=None):
-        return await self._client._request("GET", f"sandbox/{_segment(id)}/list", query={"path": path})
+        return await self._client._request(
+            "GET", f"sandbox/{_segment(id)}/list", query={"path": path}
+        )
 
     async def read_file(self, id, path):
-        return await self._client._request("GET", f"sandbox/{_segment(id)}/read", query={"path": path})
+        return await self._client._request(
+            "GET", f"sandbox/{_segment(id)}/read", query={"path": path}
+        )
 
     async def write_file(self, id, path, content):
-        return await self._client._request("POST", f"sandbox/{_segment(id)}/write", body={"path": path, "content": content})
+        return await self._client._request(
+            "POST", f"sandbox/{_segment(id)}/write", body={"path": path, "content": content}
+        )
 
     async def edit_file(self, id, path, old_str, new_str=""):
-        return await self._client._request("POST", f"sandbox/{_segment(id)}/edit", body={"path": path, "old_str": old_str, "new_str": new_str})
+        return await self._client._request(
+            "POST",
+            f"sandbox/{_segment(id)}/edit",
+            body={"path": path, "old_str": old_str, "new_str": new_str},
+        )
 
     async def download_file(self, id, path):
-        return await self._client._request("GET", f"sandbox/{_segment(id)}/download", query={"path": path}, binary=True)
+        return await self._client._request(
+            "GET", f"sandbox/{_segment(id)}/download", query={"path": path}, binary=True
+        )
 
     async def run_code(self, id, code, files=None):
-        return await self._client._request("POST", f"sandbox/{_segment(id)}/code", body={"code": code, "files": [] if files is None else files})
+        return await self._client._request(
+            "POST",
+            f"sandbox/{_segment(id)}/code",
+            body={"code": code, "files": [] if files is None else files},
+        )
 
     async def run_command(self, id, command, stream=False):
-        return await self._client._request("POST", f"sandbox/{_segment(id)}/command", body={"command": command, "stream": stream})
+        return await self._client._request(
+            "POST", f"sandbox/{_segment(id)}/command", body={"command": command, "stream": stream}
+        )
 
     async def upload_file(self, id, path, file):
         owned = isinstance(file, (str, Path))
         content = open(file, "rb") if owned else file
         try:
-            return await self._client._request("POST", f"sandbox/{_segment(id)}/upload", data={"path": path}, files={"file": (Path(path).name, content, "application/octet-stream")})
+            return await self._client._request(
+                "POST",
+                f"sandbox/{_segment(id)}/upload",
+                data={"path": path},
+                files={"file": (Path(path).name, content, "application/octet-stream")},
+            )
         finally:
             if owned:
                 content.close()
-

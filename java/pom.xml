@@ -1,23 +1,147 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.topthink</groupId><artifactId>think-ai</artifactId><version>1.0.1</version>
-  <name>ThinkAI Java SDK</name><description>ThinkAI SDK with dynamic JSON, SSE, and sandbox files.</description>
+  <groupId>com.topthink</groupId>
+  <artifactId>think-ai</artifactId>
+  <version>1.0.1</version>
+  <name>ThinkAI Java SDK</name>
+  <description>ThinkAI SDK with dynamic JSON, SSE, and sandbox files.</description>
   <url>https://github.com/top-think/think-ai</url>
-  <licenses><license><name>Apache License 2.0</name><url>https://www.apache.org/licenses/LICENSE-2.0</url></license></licenses>
-  <developers><developer><id>topthink</id><name>TopThink</name><url>https://www.topthink.com</url></developer></developers>
-  <scm><connection>scm:git:https://github.com/top-think/think-ai.git</connection><developerConnection>scm:git:ssh://git@github.com/top-think/think-ai.git</developerConnection><url>https://github.com/top-think/think-ai</url></scm>
-  <properties><maven.compiler.release>17</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><jackson.version>2.20.1</jackson.version><junit.version>5.13.4</junit.version></properties>
+  <licenses>
+    <license>
+      <name>Apache License 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>topthink</id>
+      <name>TopThink</name>
+      <url>https://www.topthink.com</url>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:https://github.com/top-think/think-ai.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/top-think/think-ai.git</developerConnection>
+    <url>https://github.com/top-think/think-ai</url>
+  </scm>
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jackson.version>2.20.1</jackson.version>
+    <junit.version>5.13.4</junit.version>
+  </properties>
   <dependencies>
-    <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId><version>${jackson.version}</version></dependency>
-    <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>${junit.version}</version><scope>test</scope></dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
-  <build><resources><resource><directory>${project.basedir}</directory><targetPath>META-INF</targetPath><includes><include>LICENSE</include><include>README.md</include><include>PUBLISHING.md</include></includes></resource></resources><plugins>
-    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version></plugin>
-    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.4</version></plugin>
-    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-source-plugin</artifactId><version>3.3.1</version><executions><execution><id>sources</id><goals><goal>jar-no-fork</goal></goals></execution></executions></plugin>
-    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-javadoc-plugin</artifactId><version>3.12.0</version><configuration><doclint>none</doclint><failOnWarnings>false</failOnWarnings></configuration><executions><execution><id>javadoc</id><goals><goal>jar</goal></goals></execution></executions></plugin>
-  </plugins></build>
+  <build>
+    <resources>
+      <resource>
+        <directory>${project.basedir}</directory>
+        <targetPath>META-INF</targetPath>
+        <includes>
+          <include>LICENSE</include>
+          <include>README.md</include>
+          <include>PUBLISHING.md</include>
+        </includes>
+      </resource>
+    </resources>
+    <plugins>
+      <!-- Formatting is explicit so normal builds remain independent of formatter JDK internals. -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>3.10.4</version>
+        <configuration>
+          <lineEndings>UNIX</lineEndings>
+          <java>
+            <includes>
+              <include>src/main/java/**/*.java</include>
+              <include>src/test/java/**/*.java</include>
+            </includes>
+            <googleJavaFormat>
+              <version>1.28.0</version>
+              <style>AOSP</style>
+              <reorderImports>true</reorderImports>
+              <reflowLongStrings>true</reflowLongStrings>
+              <formatJavadoc>false</formatJavadoc>
+            </googleJavaFormat>
+            <trimTrailingWhitespace />
+            <endWithNewline />
+          </java>
+          <formats>
+            <format>
+              <includes>
+                <include>pom.xml</include>
+              </includes>
+              <eclipseWtp>
+                <type>XML</type>
+                <version>4.21.0</version>
+                <files>
+                  <file>${project.basedir}/xml-format.properties</file>
+                </files>
+              </eclipseWtp>
+              <trimTrailingWhitespace />
+              <endWithNewline />
+            </format>
+          </formats>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.14.1</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.4</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>3.3.1</version>
+        <executions>
+          <execution>
+            <id>sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.12.0</version>
+        <configuration>
+          <doclint>none</doclint>
+          <failOnWarnings>false</failOnWarnings>
+        </configuration>
+        <executions>
+          <execution>
+            <id>javadoc</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
   <!-- Explicit opt-in only. Normal verify/install does not load publishing or signing plugins. -->
   <profiles>
     <profile>
@@ -35,7 +159,9 @@
               <execution>
                 <id>sign-release-artifacts</id>
                 <phase>verify</phase>
-                <goals><goal>sign</goal></goals>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
               </execution>
             </executions>
           </plugin>

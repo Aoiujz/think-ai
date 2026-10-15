@@ -1,0 +1,12 @@
+**/node_modules/
+**/dist/
+**/build/
+**/target/
+**/bin/
+**/obj/
+**/.tools/
+**/.venv/
+**/.package-check/
+**/.repository/
+.artifacts/
+vendor/

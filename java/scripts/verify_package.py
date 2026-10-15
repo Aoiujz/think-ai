@@ -1,4 +1,5 @@
 """Build a real Maven artifact, install locally, then run an independent consumer."""
+
 from pathlib import Path
 import json
 import os
@@ -17,7 +18,9 @@ def run(args, cwd=SDK, env=None):
 
 
 def main():
-    version = ET.parse(SDK / "pom.xml").getroot().findtext("{http://maven.apache.org/POM/4.0.0}version")
+    version = (
+        ET.parse(SDK / "pom.xml").getroot().findtext("{http://maven.apache.org/POM/4.0.0}version")
+    )
     if not version or not version.strip():
         raise SystemExit("java/pom.xml must declare its own project version.")
     version = version.strip()
@@ -32,7 +35,11 @@ def main():
         candidates = list((SDK / ".tools").glob("jdk-*"))
         if candidates:
             environment["JAVA_HOME"] = str(candidates[0])
-    java = Path(environment["JAVA_HOME"]) / "bin" / ("java.exe" if os.name == "nt" else "java") if environment.get("JAVA_HOME") else Path(shutil.which("java") or "java")
+    java = (
+        Path(environment["JAVA_HOME"]) / "bin" / ("java.exe" if os.name == "nt" else "java")
+        if environment.get("JAVA_HOME")
+        else Path(shutil.which("java") or "java")
+    )
     repository = SDK / ".repository"
     common = [maven, "-B", "-q", f"-Dmaven.repo.local={repository}"]
     run([*common, "-DskipTests", "install"], env=environment)
@@ -47,13 +54,17 @@ def main():
         assert (SDK / "target" / f"think-ai-{version}-{classifier}.jar").is_file()
     consumer = Path(tempfile.mkdtemp(prefix="package-consumer-", dir=SDK / "target"))
     (consumer / "src/main/java").mkdir(parents=True)
-    (consumer / "pom.xml").write_text(f'''<project xmlns="http://maven.apache.org/POM/4.0.0">
+    (consumer / "pom.xml").write_text(
+        f"""<project xmlns="http://maven.apache.org/POM/4.0.0">
 <modelVersion>4.0.0</modelVersion><groupId>offline.consumer</groupId><artifactId>consumer</artifactId><version>1.0.0</version>
 <properties><maven.compiler.release>17</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding></properties>
 <dependencies><dependency><groupId>com.topthink</groupId><artifactId>think-ai</artifactId><version>{version}</version></dependency></dependencies>
 <build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version></plugin></plugins></build>
-</project>''', encoding="utf-8")
-    (consumer / "src/main/java/Consumer.java").write_text('''import com.topthink.ai.*;
+</project>""",
+        encoding="utf-8",
+    )
+    (consumer / "src/main/java/Consumer.java").write_text(
+        """import com.topthink.ai.*;
 import java.net.URI;
 import java.util.Map;
 public class Consumer {
@@ -74,17 +85,44 @@ public class Consumer {
     }
     System.out.println("Java packaged consumer: PASS");
   }
-}''', encoding="utf-8")
+}""",
+        encoding="utf-8",
+    )
     classpath_file = consumer / "classpath.txt"
-    run([*common, "-f", consumer / "pom.xml", "package", "org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath", f"-Dmdep.outputFile={classpath_file}"], cwd=consumer, env=environment)
-    node = subprocess.Popen(["node", str(ROOT / "tests/contracts/server.mjs")], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-                            env={**environment, "PORT": "0"}, creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+    run(
+        [
+            *common,
+            "-f",
+            consumer / "pom.xml",
+            "package",
+            "org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath",
+            f"-Dmdep.outputFile={classpath_file}",
+        ],
+        cwd=consumer,
+        env=environment,
+    )
+    node = subprocess.Popen(
+        ["node", str(ROOT / "tests/contracts/server.mjs")],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env={**environment, "PORT": "0"},
+        creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+    )
     try:
         endpoint = json.loads(node.stdout.readline())["endpoint"]
         command = [java]
         if environment.get("THINKAI_JAVA_SOCKET_DIR"):
             command.append("-Djdk.net.unixdomain.tmpdir=" + environment["THINKAI_JAVA_SOCKET_DIR"])
-        command += ["-cp", str(consumer / "target/classes") + os.pathsep + classpath_file.read_text(encoding="utf-8").strip(), "Consumer", endpoint, version]
+        command += [
+            "-cp",
+            str(consumer / "target/classes")
+            + os.pathsep
+            + classpath_file.read_text(encoding="utf-8").strip(),
+            "Consumer",
+            endpoint,
+            version,
+        ]
         run(command, cwd=consumer, env=environment)
     finally:
         node.terminate()

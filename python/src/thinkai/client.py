@@ -1,4 +1,5 @@
 """Synchronous and asynchronous ThinkAI clients."""
+
 from __future__ import annotations
 
 import httpx
@@ -7,11 +8,27 @@ from . import resources
 from ._version import __version__
 from .transport import request, async_request, BinaryStream, AsyncBinaryStream
 
-_RESOURCES = ("chat", "responses", "images", "videos", "audio", "avatar", "music", "embeddings", "rerank", "decision", "plugin", "model", "sandbox", "skill")
+_RESOURCES = (
+    "chat",
+    "responses",
+    "images",
+    "videos",
+    "audio",
+    "avatar",
+    "music",
+    "embeddings",
+    "rerank",
+    "decision",
+    "plugin",
+    "model",
+    "sandbox",
+    "skill",
+)
 
 
 def _query(params):
     result = []
+
     def append(key, value):
         if value is None:
             return
@@ -23,6 +40,7 @@ def _query(params):
                 append(f"{key}[{index}]", item)
         else:
             result.append((key, "1" if value is True else "0" if value is False else str(value)))
+
     for key, value in params.items():
         append(key, value)
     return result
@@ -44,7 +62,15 @@ class Client:
     sandbox: resources.Sandbox
     skill: resources.Skill
 
-    def __init__(self, token: str, *, endpoint: str = "https://ai.topthink.com/", timeout: float = 300, poll_interval: float = 5, http_client: httpx.Client | None = None):
+    def __init__(
+        self,
+        token: str,
+        *,
+        endpoint: str = "https://ai.topthink.com/",
+        timeout: float = 300,
+        poll_interval: float = 5,
+        http_client: httpx.Client | None = None,
+    ):
         if timeout <= 0 or poll_interval < 0:
             raise ValueError("timeout must be positive and poll_interval non-negative")
         self.endpoint = endpoint.rstrip("/") + "/"
@@ -52,17 +78,31 @@ class Client:
         self.poll_interval = poll_interval
         self._http = http_client or httpx.Client()
         self._owned = http_client is None
-        self._headers = {"Authorization": f"Bearer {token}", "User-Agent": f"ThinkAI-Python/{__version__}", "Accept": "application/json"}
+        self._headers = {
+            "Authorization": f"Bearer {token}",
+            "User-Agent": f"ThinkAI-Python/{__version__}",
+            "Accept": "application/json",
+        }
         self._streams: weakref.WeakSet[BinaryStream] = weakref.WeakSet()
         for name in _RESOURCES:
             setattr(self, name, getattr(resources, name.capitalize())(self))
 
-    def _request(self, method, path, *, body=None, query=None, timeout=None, binary=False, **kwargs):
+    def _request(
+        self, method, path, *, body=None, query=None, timeout=None, binary=False, **kwargs
+    ):
         if body is not None:
             kwargs["json"] = body
         if query is not None:
             kwargs["params"] = _query(query)
-        result = request(self._http, self.timeout if timeout is None else timeout, method, self.endpoint + path, force_binary=binary, headers=self._headers, **kwargs)
+        result = request(
+            self._http,
+            self.timeout if timeout is None else timeout,
+            method,
+            self.endpoint + path,
+            force_binary=binary,
+            headers=self._headers,
+            **kwargs,
+        )
         if isinstance(result, BinaryStream):
             self._streams.add(result)
         return result
@@ -97,7 +137,15 @@ class AsyncClient:
     sandbox: resources.AsyncSandbox
     skill: resources.AsyncSkill
 
-    def __init__(self, token: str, *, endpoint: str = "https://ai.topthink.com/", timeout: float = 300, poll_interval: float = 5, http_client: httpx.AsyncClient | None = None):
+    def __init__(
+        self,
+        token: str,
+        *,
+        endpoint: str = "https://ai.topthink.com/",
+        timeout: float = 300,
+        poll_interval: float = 5,
+        http_client: httpx.AsyncClient | None = None,
+    ):
         if timeout <= 0 or poll_interval < 0:
             raise ValueError("timeout must be positive and poll_interval non-negative")
         self.endpoint = endpoint.rstrip("/") + "/"
@@ -105,17 +153,31 @@ class AsyncClient:
         self.poll_interval = poll_interval
         self._http = http_client or httpx.AsyncClient()
         self._owned = http_client is None
-        self._headers = {"Authorization": f"Bearer {token}", "User-Agent": f"ThinkAI-Python/{__version__}", "Accept": "application/json"}
+        self._headers = {
+            "Authorization": f"Bearer {token}",
+            "User-Agent": f"ThinkAI-Python/{__version__}",
+            "Accept": "application/json",
+        }
         self._streams: weakref.WeakSet[AsyncBinaryStream] = weakref.WeakSet()
         for name in _RESOURCES:
             setattr(self, name, getattr(resources, "Async" + name.capitalize())(self))
 
-    async def _request(self, method, path, *, body=None, query=None, timeout=None, binary=False, **kwargs):
+    async def _request(
+        self, method, path, *, body=None, query=None, timeout=None, binary=False, **kwargs
+    ):
         if body is not None:
             kwargs["json"] = body
         if query is not None:
             kwargs["params"] = _query(query)
-        result = await async_request(self._http, self.timeout if timeout is None else timeout, method, self.endpoint + path, force_binary=binary, headers=self._headers, **kwargs)
+        result = await async_request(
+            self._http,
+            self.timeout if timeout is None else timeout,
+            method,
+            self.endpoint + path,
+            force_binary=binary,
+            headers=self._headers,
+            **kwargs,
+        )
         if isinstance(result, AsyncBinaryStream):
             self._streams.add(result)
         return result

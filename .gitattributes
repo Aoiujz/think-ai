@@ -1,3 +1,13 @@
+*.java text eol=lf
+*.py text eol=lf
+*.cs text eol=lf
+*.ts text eol=lf
+*.mjs text eol=lf
+*.go text eol=lf
+/java/pom.xml text eol=lf
+/java/xml-format.properties text eol=lf
+*.csproj text eol=lf
+
 /python export-ignore
 /typescript export-ignore
 /go export-ignore
@@ -11,3 +21,6 @@
 /php/examples export-ignore
 /.gitignore export-ignore
 /.gitattributes export-ignore
+/.editorconfig export-ignore
+/.prettierrc.json export-ignore
+/.prettierignore export-ignore

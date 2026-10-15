@@ -90,6 +90,10 @@ jobs:
         with:
           node-version: '22'
       - run: python -m pip install './python[dev]'
+      - name: Check Python formatting
+        run: >-
+          python -m ruff format --check --config python/pyproject.toml
+          python java/scripts dotnet/scripts tests/php tests/packaging scripts/central-bundle.py
       - run: python -m pytest python/tests -q
       - run: python -m build python
       - run: python python/scripts/check_package.py
@@ -128,6 +132,7 @@ jobs:
           cache: npm
           cache-dependency-path: typescript/package-lock.json
       - run: npm ci
+      - run: npm run format:check
       - run: npm test
       - run: npm pack
       - run: npm run check:package
@@ -164,6 +169,13 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
+      - name: Check Go formatting
+        run: |
+          unformatted_files="$(gofmt -l .)"
+          if [ -n "$unformatted_files" ]; then
+            printf '%s\n' "$unformatted_files"
+            exit 1
+          fi
       - run: go test ./... -count=1 -timeout=120s
       - run: go vet ./...
 
@@ -190,6 +202,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - name: Check Java formatting
+        if: matrix.java == '17'
+        run: mvn -B -f java/pom.xml spotless:check
       - run: mvn -B -f java/pom.xml verify
       - run: python java/scripts/verify_package.py
       - name: Stage verified Maven packages
@@ -220,6 +235,12 @@ jobs:
         with:
           python-version: '3.12'
       - run: dotnet test dotnet/TopThink.ThinkAI.Tests --configuration Release
+      - name: Check C# formatting
+        run: |
+          dotnet format whitespace dotnet/TopThink.ThinkAI/TopThink.ThinkAI.csproj --no-restore --verify-no-changes
+          dotnet format whitespace dotnet/TopThink.ThinkAI.Tests/TopThink.ThinkAI.Tests.csproj --no-restore --verify-no-changes
+          dotnet format style dotnet/TopThink.ThinkAI/TopThink.ThinkAI.csproj --no-restore --diagnostics IDE0011 --severity info --verify-no-changes
+          dotnet format style dotnet/TopThink.ThinkAI.Tests/TopThink.ThinkAI.Tests.csproj --no-restore --diagnostics IDE0011 --severity info --verify-no-changes
       - run: python dotnet/scripts/verify_package.py
       - name: Stage verified NuGet package
         id: package

@@ -41,6 +41,12 @@ CI 为需要 Python 的任务显式安装 Python，并按分支或 PR 对并发�
 
 项目使用 [Apache-2.0](LICENSE) 许可证。
 
+### 代码格式
+
+新 SDK 的源码与测试使用语言原生或常用格式工具：Java 使用 Spotless / google-java-format，Python 使用 Ruff，TypeScript / JavaScript 使用 Prettier，C# 使用 dotnet format，Go 使用 gofmt。Java、Python、C# 采用 4 空格缩进，长表达式按格式工具自动换行，控制流及方法体展开，避免把复杂逻辑堆在一行。
+
+根 `.editorconfig` 提供编辑器默认配置；工具版本、修正命令和 CI 检查范围见 [代码格式指南](docs/FORMATTING.md)。格式工具为开发依赖，CI 仅检查格式。
+
 ### 版本发布
 
 使用统一的跨平台脚本管理各 SDK 的独立版本，完整账号准备和命令见 [发布指南](docs/PUBLISHING.md)。

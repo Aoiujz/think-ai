@@ -6,6 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
+
 @pytest.fixture(scope="session")
 def endpoint():
     script = Path(__file__).parents[2] / "tests/contracts/server.mjs"

@@ -4,10 +4,22 @@ package com.topthink.ai;
 public final class ThinkAIException extends RuntimeException {
     private final Integer statusCode;
     private final String rawBody;
+
     public ThinkAIException(String message, Integer statusCode, String rawBody, Throwable cause) {
-        super(message, cause); this.statusCode = statusCode; this.rawBody = rawBody;
+        super(message, cause);
+        this.statusCode = statusCode;
+        this.rawBody = rawBody;
     }
-    public ThinkAIException(String message, Integer statusCode, String rawBody) { this(message, statusCode, rawBody, null); }
-    public Integer statusCode() { return statusCode; }
-    public String rawBody() { return rawBody; }
+
+    public ThinkAIException(String message, Integer statusCode, String rawBody) {
+        this(message, statusCode, rawBody, null);
+    }
+
+    public Integer statusCode() {
+        return statusCode;
+    }
+
+    public String rawBody() {
+        return rawBody;
+    }
 }

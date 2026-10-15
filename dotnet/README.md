@@ -17,17 +17,23 @@ using System.Text.Json.Nodes;
 
 using var client = new ThinkAIClient(
     Environment.GetEnvironmentVariable("THINKAI_TOKEN")!,
-    new ThinkAIOptions {
+    new ThinkAIOptions
+    {
         Endpoint = new Uri("https://ai.topthink.com/"),
         OperationTimeout = TimeSpan.FromSeconds(300),
         PollInterval = TimeSpan.FromSeconds(5)
     });
 
-using var response = await client.Chat.CompletionsAsync(new JsonObject {
-    ["model"] = "你的模型", ["stream"] = false,
+using var response = await client.Chat.CompletionsAsync(new JsonObject
+{
+    ["model"] = "你的模型",
+    ["stream"] = false,
     ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = "你好" })
 });
-if (response.Kind == ResultKind.Json) Console.WriteLine(response.Json);
+if (response.Kind == ResultKind.Json)
+{
+    Console.WriteLine(response.Json);
+}
 ```
 
 参数采用可扩展的 `JsonObject`，响应 JSON 采用 `JsonNode`，不生成模型专用 schema、不筛选未知字段。字段名称保持 API 原样。可用 `JsonNode.Parse` 或 `JsonSerializer.SerializeToNode` 从字典/对象构造参数；SDK 不修改调用者参数。GET 查询采用 PHP 风格括号编码，布尔值为 `1/0`，null 查询值省略。
@@ -35,16 +41,21 @@ if (response.Kind == ResultKind.Json) Console.WriteLine(response.Json);
 响应包装 `ApiResult.Kind` 为 `Json`、`Events`、`Binary` 或 `Empty`。JSON null 仍是 `Json`；HTTP 204/205 是 `Empty`。普通接口按实际 Content-Type 判别；下载操作直接提供原始 Binary，JSON 文件也保持原始字节。用 `using` 或 `await using` 释放结果，提前结束流也必须释放。
 
 ```csharp
-await using var streamed = await client.Chat.CompletionsAsync(new JsonObject {
+await using var streamed = await client.Chat.CompletionsAsync(new JsonObject
+{
     ["model"] = "你的模型",
     ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = "你好" })
 });
-if (streamed.Kind == ResultKind.Events) {
-    await foreach (var item in streamed.Events!) {
+if (streamed.Kind == ResultKind.Events)
+{
+    await foreach (var item in streamed.Events!)
+    {
         Console.WriteLine(item.Data);
         // Event / Id / RawData / Retry 保留 SSE 元数据。
     }
-} else if (streamed.Kind == ResultKind.Json) {
+}
+else if (streamed.Kind == ResultKind.Json)
+{
     Console.WriteLine(streamed.Json);
 }
 ```
@@ -101,7 +112,8 @@ await client.Skill.DownloadAsync("列表返回的技能包路径");
 
 ```csharp
 await using var download = await client.Sandbox.DownloadFileAsync("sandbox-id", "/workspace/output.bin");
-if (download.Kind == ResultKind.Binary) {
+if (download.Kind == ResultKind.Binary)
+{
     await using var destination = File.Create("output.bin");
     await download.Binary!.CopyToAsync(destination);
 }
@@ -127,8 +139,12 @@ using var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
 using var injected = new ThinkAIClient("token", httpClient: http);
 // SDK 不释放注入的 HttpClient；其较短 Timeout、TLS 和代理设置仍有效。
 
-try { using var failed = await client.Images.GenerationsAsync(p); }
-catch (ThinkAIException error) {
+try
+{
+    using var failed = await client.Images.GenerationsAsync(p);
+}
+catch (ThinkAIException error)
+{
     Console.Error.WriteLine(error.StatusCode); // 传输错误可为 null
     Console.Error.WriteLine(error.RawBody);
     Console.Error.WriteLine(error.InnerException);
@@ -147,3 +163,16 @@ python dotnet/scripts/verify_package.py
 ```
 
 xUnit 自动启动共享 Node.js loopback 服务，逐项调用 37 个操作，验证请求、JSON/SSE、错误、取消、轮询、multipart 及下载字节。消费者脚本实际生成 `.nupkg`，检查隔离内容，再从本地 feed 安装到临时消费者运行。包中包含 DLL、XML 文档、中文 README 与 Apache LICENSE，不包含其他语言 SDK。测试不调用真 API，也不公开发布包。
+
+## 代码格式
+
+`dotnet/.editorconfig` 规定 C# 使用 4 空格和 LF，展开控制语句及非空方法块，控制语句使用大括号，保留现有 file-scoped namespace。使用 .NET SDK 自带的格式工具，在已 restore 的仓库根执行以下只读检查：
+
+```sh
+dotnet format whitespace dotnet/TopThink.ThinkAI/TopThink.ThinkAI.csproj --no-restore --verify-no-changes
+dotnet format whitespace dotnet/TopThink.ThinkAI.Tests/TopThink.ThinkAI.Tests.csproj --no-restore --verify-no-changes
+dotnet format style dotnet/TopThink.ThinkAI/TopThink.ThinkAI.csproj --no-restore --diagnostics IDE0011 --severity info --verify-no-changes
+dotnet format style dotnet/TopThink.ThinkAI.Tests/TopThink.ThinkAI.Tests.csproj --no-restore --diagnostics IDE0011 --severity info --verify-no-changes
+```
+
+本地修正时移除 `--verify-no-changes`。样式修正限定 `IDE0011`，用于补齐控制语句的大括号。

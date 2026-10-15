@@ -1,4 +1,5 @@
 """HTTP, deadlines and closeable incremental response readers."""
+
 from __future__ import annotations
 
 import asyncio
@@ -94,6 +95,7 @@ async def _async_sse(lines: AsyncIterator[str]) -> AsyncIterator[Any]:
 
 class _Guard:
     """The watchdog also closes an idle response when its total lifetime expires."""
+
     def __init__(self, timeout: float):
         if timeout <= 0:
             raise ValueError("timeout must be positive")
@@ -247,7 +249,9 @@ class AsyncEventStream(AsyncBinaryStream):
             await self.aclose()
 
 
-def request(client: httpx.Client, timeout: float, method: str, url: str, *, force_binary=False, **kwargs):
+def request(
+    client: httpx.Client, timeout: float, method: str, url: str, *, force_binary=False, **kwargs
+):
     guard = _Guard(timeout)
     response = None
     retained = False
@@ -288,7 +292,15 @@ def request(client: httpx.Client, timeout: float, method: str, url: str, *, forc
                 response.close()
 
 
-async def async_request(client: httpx.AsyncClient, timeout: float, method: str, url: str, *, force_binary=False, **kwargs):
+async def async_request(
+    client: httpx.AsyncClient,
+    timeout: float,
+    method: str,
+    url: str,
+    *,
+    force_binary=False,
+    **kwargs,
+):
     deadline = asyncio.get_running_loop().time() + timeout
     response = None
     retained = False

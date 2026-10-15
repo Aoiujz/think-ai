@@ -13,7 +13,9 @@ from thinkai import Client, EventStream
 
 with Client("YOUR_TOKEN", endpoint="https://ai.topthink.com/", timeout=300) as client:
     # Chat 缺省 stream=True；根据实际响应 Content-Type 返回字典或 EventStream。
-    result = client.chat.completions({"model": "YOUR_CHAT_MODEL", "messages": [{"role": "user", "content": "你好"}]})
+    result = client.chat.completions(
+        {"model": "YOUR_CHAT_MODEL", "messages": [{"role": "user", "content": "你好"}]}
+    )
     if isinstance(result, EventStream):
         with result:
             for event in result:
@@ -21,7 +23,13 @@ with Client("YOUR_TOKEN", endpoint="https://ai.topthink.com/", timeout=300) as c
     else:
         print(result)
 
-    result = client.chat.completions({"model": "YOUR_CHAT_MODEL", "messages": [{"role": "user", "content": "你好"}], "stream": False})
+    result = client.chat.completions(
+        {
+            "model": "YOUR_CHAT_MODEL",
+            "messages": [{"role": "user", "content": "你好"}],
+            "stream": False,
+        }
+    )
 ```
 
 异步客户端使用 HTTPX AsyncClient。取消请求或流读取可取消其 asyncio Task；提前结束事件消费时使用 `async with` 或 `await stream.aclose()`。
@@ -32,7 +40,9 @@ from thinkai import AsyncClient, AsyncEventStream
 
 async def main():
     async with AsyncClient("YOUR_TOKEN") as client:
-        result = await client.responses.create({"model": "YOUR_CHAT_MODEL", "input": "你好"})
+        result = await client.responses.create(
+            {"model": "YOUR_CHAT_MODEL", "input": "你好"}
+        )
         if isinstance(result, AsyncEventStream):
             async with result:
                 async for event in result:
@@ -105,4 +115,11 @@ Avatar `video(params, wait=False)` 默认立即返回。`wait=True` 等待至多
 python -m pytest python/tests -q
 python -m build python
 python python/scripts/check_package.py
+```
+
+代码格式使用开发依赖中的固定版本 Ruff 0.17.0，统一配置位于 `python/pyproject.toml`，行宽 100，目标 Python 3.11。以下命令在仓库根目录运行，覆盖 Python SDK 和跨目录 Python 开发脚本；只运行 formatter，嵌入的其他语言代码字符串保持原样。
+
+```bash
+python -m ruff format --config python/pyproject.toml python java/scripts dotnet/scripts tests/php tests/packaging scripts/central-bundle.py
+python -m ruff format --check --config python/pyproject.toml python java/scripts dotnet/scripts tests/php tests/packaging scripts/central-bundle.py
 ```

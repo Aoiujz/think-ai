@@ -30,7 +30,9 @@ try (var client = ThinkAIClient.builder(System.getenv("THINKAI_TOKEN"))
     try (var result = client.chat().completions(Map.of(
             "model", "你的模型", "stream", false,
             "messages", List.of(Map.of("role", "user", "content", "你好"))))) {
-        if (result instanceof ApiResult.Json json) System.out.println(json.value());
+        if (result instanceof ApiResult.Json json) {
+            System.out.println(json.value());
+        }
     }
 }
 ```
@@ -143,6 +145,17 @@ catch (ThinkAIException error) {
 ```
 
 SDK 不自动重试，避免生成/上传任务被重复创建。默认启用 JDK 的 TLS 验证；自定义 HttpClient 的 TLS/代理配置由调用者负责。
+
+## 代码格式
+
+在仓库根使用 JDK 17 执行：
+
+```sh
+mvn -f java/pom.xml -B spotless:apply
+mvn -f java/pom.xml -B spotless:check
+```
+
+配置固定为 Spotless Maven 3.10.4 与 google-java-format 1.28.0，Java 主源码和测试采用 AOSP 风格（4 空格缩进、100 列换行），控制语句使用大括号。POM 使用 Eclipse WTP 4.21.0 与 `xml-format.properties` 的 2 空格 XML 排版，保留元素顺序。格式化不绑定 `verify`，CI 在 JDK 17 上单独执行 `spotless:check`。该版本格式化器的最低运行环境及 `jdk.compiler` 要求见 [官方说明](https://github.com/google/google-java-format/blob/v1.28.0/README.md#using-the-formatter)，Maven 配置见 [Spotless 文档](https://github.com/diffplug/spotless/tree/main/plugin-maven#google-java-format)。
 
 ## 离线验证与打包
 
