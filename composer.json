@@ -1,5 +1,6 @@
 {
   "name": "topthink/think-ai",
+  "description": "ThinkAI PHP SDK",
   "license": "Apache-2.0",
   "authors": [
     {
@@ -14,7 +15,7 @@
   },
   "autoload": {
     "psr-4": {
-      "think\\ai\\": "src"
+      "think\\ai\\": "php/src/"
     }
   }
 }

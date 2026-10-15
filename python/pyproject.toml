@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "topthink-think-ai"
+version = "1.0.1"
+description = "Official ThinkAI SDK for Python"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{name = "TOPThink"}]
+dependencies = ["httpx>=0.27,<1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "build>=1.2", "hatchling>=1.26"]
+publish = ["twine>=6"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/thinkai"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

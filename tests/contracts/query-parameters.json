@@ -1,0 +1,14 @@
+{
+  "input": {
+    "enabled": false,
+    "tags": ["a", "b"],
+    "filter": {"q": "你好"},
+    "skip": null
+  },
+  "expected": {
+    "enabled": "0",
+    "tags[0]": "a",
+    "tags[1]": "b",
+    "filter[q]": "你好"
+  }
+}

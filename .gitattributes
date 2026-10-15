@@ -1,0 +1,13 @@
+/python export-ignore
+/typescript export-ignore
+/go export-ignore
+/java export-ignore
+/dotnet export-ignore
+/tests export-ignore
+/scripts export-ignore
+/.github export-ignore
+/docs export-ignore
+/php/tests export-ignore
+/php/examples export-ignore
+/.gitignore export-ignore
+/.gitattributes export-ignore

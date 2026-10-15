@@ -1,0 +1,261 @@
+[
+  {
+    "resource": "chat",
+    "operation": "completions",
+    "http_method": "POST",
+    "path": "chat/completions",
+    "response": "auto"
+  },
+  {
+    "resource": "responses",
+    "operation": "create",
+    "http_method": "POST",
+    "path": "responses",
+    "response": "sse"
+  },
+  {
+    "resource": "images",
+    "operation": "generations",
+    "http_method": "POST",
+    "path": "images/generations",
+    "response": "json"
+  },
+  {
+    "resource": "images",
+    "operation": "inpainting",
+    "http_method": "POST",
+    "path": "images/inpainting",
+    "response": "json"
+  },
+  {
+    "resource": "images",
+    "operation": "outpainting",
+    "http_method": "POST",
+    "path": "images/outpainting",
+    "response": "json"
+  },
+  {
+    "resource": "images",
+    "operation": "upscale",
+    "http_method": "POST",
+    "path": "images/upscale",
+    "response": "json"
+  },
+  {
+    "resource": "images",
+    "operation": "poster",
+    "http_method": "POST",
+    "path": "images/poster",
+    "response": "json"
+  },
+  {
+    "resource": "images",
+    "operation": "edit",
+    "http_method": "POST",
+    "path": "images/edit",
+    "response": "json"
+  },
+  {
+    "resource": "videos",
+    "operation": "generations",
+    "http_method": "POST",
+    "path": "videos/generations",
+    "response": "json"
+  },
+  {
+    "resource": "videos",
+    "operation": "query",
+    "http_method": "POST",
+    "path": "videos/query",
+    "response": "json"
+  },
+  {
+    "resource": "audio",
+    "operation": "speech",
+    "http_method": "POST",
+    "path": "audio/speech",
+    "response": "auto"
+  },
+  {
+    "resource": "audio",
+    "operation": "transcriptions",
+    "http_method": "POST",
+    "path": "audio/transcriptions",
+    "response": "json"
+  },
+  {
+    "resource": "avatar",
+    "operation": "video",
+    "http_method": "POST",
+    "path": "avatar/video",
+    "response": "json"
+  },
+  {
+    "resource": "avatar",
+    "operation": "query",
+    "http_method": "POST",
+    "path": "avatar/query",
+    "response": "json"
+  },
+  {
+    "resource": "music",
+    "operation": "song",
+    "http_method": "POST",
+    "path": "music/song",
+    "response": "json"
+  },
+  {
+    "resource": "music",
+    "operation": "bgm",
+    "http_method": "POST",
+    "path": "music/bgm",
+    "response": "json"
+  },
+  {
+    "resource": "music",
+    "operation": "query",
+    "http_method": "POST",
+    "path": "music/query",
+    "response": "json"
+  },
+  {
+    "resource": "embeddings",
+    "operation": "create",
+    "http_method": "POST",
+    "path": "embeddings",
+    "response": "json"
+  },
+  {
+    "resource": "rerank",
+    "operation": "create",
+    "http_method": "POST",
+    "path": "rerank",
+    "response": "json"
+  },
+  {
+    "resource": "decision",
+    "operation": "evaluate",
+    "http_method": "POST",
+    "path": "decisions",
+    "response": "json"
+  },
+  {
+    "resource": "plugin",
+    "operation": "list",
+    "http_method": "GET",
+    "path": "plugin",
+    "response": "json"
+  },
+  {
+    "resource": "model",
+    "operation": "list",
+    "http_method": "GET",
+    "path": "model",
+    "response": "json"
+  },
+  {
+    "resource": "model",
+    "operation": "show",
+    "http_method": "GET",
+    "path": "model/{type}/{code}",
+    "response": "json"
+  },
+  {
+    "resource": "sandbox",
+    "operation": "create",
+    "http_method": "POST",
+    "path": "sandbox",
+    "response": "json"
+  },
+  {
+    "resource": "sandbox",
+    "operation": "get",
+    "http_method": "GET",
+    "path": "sandbox/{id}",
+    "response": "json"
+  },
+  {
+    "resource": "sandbox",
+    "operation": "delete",
+    "http_method": "DELETE",
+    "path": "sandbox/{id}",
+    "response": "empty"
+  },
+  {
+    "resource": "sandbox",
+    "operation": "listFile",
+    "http_method": "GET",
+    "path": "sandbox/{id}/list",
+    "response": "json"
+  },
+  {
+    "resource": "sandbox",
+    "operation": "readFile",
+    "http_method": "GET",
+    "path": "sandbox/{id}/read",
+    "response": "json"
+  },
+  {
+    "resource": "sandbox",
+    "operation": "writeFile",
+    "http_method": "POST",
+    "path": "sandbox/{id}/write",
+    "response": "empty"
+  },
+  {
+    "resource": "sandbox",
+    "operation": "editFile",
+    "http_method": "POST",
+    "path": "sandbox/{id}/edit",
+    "response": "empty"
+  },
+  {
+    "resource": "sandbox",
+    "operation": "uploadFile",
+    "http_method": "POST",
+    "path": "sandbox/{id}/upload",
+    "response": "empty"
+  },
+  {
+    "resource": "sandbox",
+    "operation": "downloadFile",
+    "http_method": "GET",
+    "path": "sandbox/{id}/download",
+    "response": "binary"
+  },
+  {
+    "resource": "sandbox",
+    "operation": "runCode",
+    "http_method": "POST",
+    "path": "sandbox/{id}/code",
+    "response": "json"
+  },
+  {
+    "resource": "sandbox",
+    "operation": "runCommand",
+    "http_method": "POST",
+    "path": "sandbox/{id}/command",
+    "response": "auto"
+  },
+  {
+    "resource": "skill",
+    "operation": "list",
+    "http_method": "GET",
+    "path": "skill",
+    "response": "json"
+  },
+  {
+    "resource": "skill",
+    "operation": "categories",
+    "http_method": "GET",
+    "path": "skill/category",
+    "response": "json"
+  },
+  {
+    "resource": "skill",
+    "operation": "download",
+    "http_method": "GET",
+    "path": "skill/download",
+    "response": "binary"
+  }
+]

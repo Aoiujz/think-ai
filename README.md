@@ -1,4 +1,65 @@
-## 💎ThinkAI —— 聚合AI接口服务
+## ThinkAI 多语言 SDK
+
+ThinkAI 官方 SDK，提供 PHP、Python、TypeScript/JavaScript、Go、Java、C# 六种语言入口。新增 SDK 目前提供本地构建与安装方式，公开包注册和发布是独立步骤。
+
+| 语言 | 运行时 | 文档 | 包标识 |
+| --- | --- | --- | --- |
+| PHP | 8.0+ | [PHP 用法](php/README.md) | `topthink/think-ai` |
+| Python | 3.11+ | [Python 用法](python/README.md) | `topthink-think-ai`，导入 `thinkai` |
+| TypeScript / JavaScript | Node.js 22+ | [Node.js 用法](typescript/README.md) | `@topthink/think-ai` |
+| Go | 1.26+ | [Go 用法](go/README.md) | `github.com/top-think/think-ai/go` |
+| Java | 17+ | [Java 用法](java/README.md) | `com.topthink:think-ai` |
+| C# | .NET 10 | [.NET 用法](dotnet/README.md) | `TopThink.ThinkAI` |
+
+六种 SDK 对齐 Chat、Responses、Images、Videos、Audio、Avatar、Music、Embeddings、Rerank、Decision、Plugin、Model、Sandbox、Skill，共 14 类资源、37 个方法。参数使用字典/JSON，字段和返回结果保持服务端原始格式，资源方法遵循各语言习惯。
+
+Chat 保留 PHP 的默认流式语义，使用 `stream=false` 请求 JSON；Responses 使用 ThinkAI 自有事件格式。各语言文档提供流式消费、关闭、文件传输、任务查询及错误处理示例。
+
+### PHP 安装保持不变
+
+```sh
+composer require topthink/think-ai
+```
+
+PHP 源码迁到 `php/src/`，命名空间和公开用法保持不变。根 `.gitattributes` 排除其他语言目录，Composer **dist** 安装只包含 PHP SDK 及必要元数据；`--prefer-source` 会克隆完整仓库。[Composer 分发包说明](https://getcomposer.org/doc/02-libraries.md#light-weight-distribution-packages)
+
+### 开发与验收
+
+每种 SDK 的 README 包含本地安装、测试、构建和资源示例。公共接口矩阵见 [SDK 协议](docs/SDK_CONTRACT.md)，本地 HTTP 样例见 [共用契约测试](tests/contracts/README.md)，实际检查结果见 [验收记录](docs/VALIDATION.md)。
+
+```sh
+composer install
+php tests/php/compatibility.php
+python tests/php/verify-migration.py
+python tests/packaging/php-dist.py
+node tests/contracts/server.mjs
+```
+
+测试请求仅发送至 Mock 或本地回环服务；离线结果不代表真实模型、计费或公开发布已验证。六种 SDK 当前版本统一为 1.0.1，分别构建并支持手动显式发布；PHP/Go 分别使用 `v*`、`go/v*` 版本标签。
+
+CI 为需要 Python 的任务显式安装 Python，并按分支或 PR 对并发运行分组，取消同组旧运行。验证通过的 PHP ZIP、Python wheel/sdist、npm tarball、Java JAR/POM 和 NuGet 包可在 Actions 运行页的 Artifacts 中下载，保留 14 天；Go 验证源码模块，不生成上传包。每个 artifact 仅含当前版本产物和校验清单。CI 只执行测试与构建，不发布 SDK，也不创建或推送版本标签；标签 push 不触发此工作流。
+
+项目使用 [Apache-2.0](LICENSE) 许可证。
+
+### 版本发布
+
+使用统一的跨平台脚本管理各 SDK 的独立版本，完整账号准备和命令见 [发布指南](docs/PUBLISHING.md)。
+
+```sh
+node scripts/release.mjs status
+node scripts/release.mjs prepare python 1.0.2
+node scripts/release.mjs prepare python 1.0.2 --execute
+# 提交并推送版本变更后
+node scripts/release.mjs build python
+node scripts/release.mjs publish python
+node scripts/release.mjs publish python --execute
+```
+
+六种 SDK 的 prepare/publish 缺省预演；只有显式 --execute 才正式发布。PHP/Go 正式发布推送各自精确版本标签并查询平台索引；Python、TypeScript、Java、C# 推送各自标签并上传对应平台，凭据留在用户环境中。PHP/Go 索引尚未可见时记录 index-pending，可重试或只读 verify；CI 不执行这些发布操作。
+
+---
+
+## ThinkAI 服务与 PHP 快速示例
 
 [ThinkAI](https://doc.topthink.com/think-ai/default.html)致力于为企业和开发者提供便捷高效的大模型对话、图像、语音、视频、向量等AI接口聚合服务。通过ThinkAI，用户可以一站式轻松地调用各类LLM模型和AI能力，将其整合到自己的产品和服务中，实现更加智能化的功能，助力企业数智化转型。
 

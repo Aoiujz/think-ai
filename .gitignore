@@ -1,4 +1,18 @@
 # Created by .ignore support plugin (hsz.mobi)
 vendor/
 .idea/
+.vscode/
 composer.lock
+node_modules/
+__pycache__/
+.pytest_cache/
+.venv/
+*.egg-info/
+build/
+dist/
+target/
+bin/
+obj/
+.tools/
+.artifacts/
+*.nupkg
