@@ -101,12 +101,12 @@ export function createContractServer() {
         : testCase === 'audio-sse' || pathname === '/audio/speech'
           ? [{ audio: { type: 'audio/x-wav', data: 'AAEC' } }, { audio: { type: 'audio/x-wav', data: '/w==' } }, { sentences: [], usage: { prompt_tokens: 1, completion_tokens: 0, total_tokens: 1 } }]
           : [
-              { delta: { content: '你好🌍' } },
-              {
-                usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
-                finish_reason: 'stop',
-              },
-            ];
+            { delta: { content: '你好🌍' } },
+            {
+              usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+              finish_reason: 'stop',
+            },
+          ];
     const payload =
       testCase === 'invalid-sse'
         ? 'data: {broken}\n\n'

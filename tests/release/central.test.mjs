@@ -17,7 +17,9 @@ const environment = {
   MAVEN_GPG_PASSPHRASE: 'offline-only-passphrase',
 };
 const python = process.env.THINKAI_PYTHON || 'python';
-const digest = (algorithm, bytes) => createHash(algorithm).update(bytes).digest('hex');
+const digest = (algorithm, bytes) => createHash(algorithm)
+  .update(bytes)
+  .digest('hex');
 const armored = '-----BEGIN PGP SIGNATURE-----\nFAKE OFFLINE SIGNATURE\n-----END PGP SIGNATURE-----\n';
 
 function fixture(t) {

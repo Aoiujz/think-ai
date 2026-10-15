@@ -165,7 +165,8 @@ public sealed class AvatarResource : Resource
     {
         if (!wait)
         {
-            return await Post("avatar/video", parameters, cancellationToken).ConfigureAwait(false);
+            return await Post("avatar/video", parameters, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         var timeout = waitTimeout ?? TimeSpan.FromSeconds(300);
@@ -175,7 +176,8 @@ public sealed class AvatarResource : Resource
             throw new ArgumentException("等待时限及轮询间隔必须大于零。");
         }
 
-        using var created = await Post("avatar/video", parameters, cancellationToken).ConfigureAwait(false);
+        using var created = await Post("avatar/video", parameters, cancellationToken)
+            .ConfigureAwait(false);
         if (created.Kind != ResultKind.Json)
         {
             throw new ThinkAIException("Avatar 创建响应不是 JSON。", created.StatusCode);
@@ -194,7 +196,8 @@ public sealed class AvatarResource : Resource
                     ["id"] = id.DeepClone(),
                     ["model"] = parameters["model"]?.DeepClone()
                 };
-                var result = await QueryAsync(query, deadline.Token).ConfigureAwait(false);
+                var result = await QueryAsync(query, deadline.Token)
+                    .ConfigureAwait(false);
                 string? status = result.Kind == ResultKind.Json
                     && result.Json?["status"] is JsonValue value
                     && value.TryGetValue<string>(out var statusValue)
@@ -211,7 +214,8 @@ public sealed class AvatarResource : Resource
                     throw new ThinkAIException("Avatar 查询响应包含未知或缺少 status。", result.StatusCode);
                 }
                 result.Dispose();
-                await Task.Delay(interval, deadline.Token).ConfigureAwait(false);
+                await Task.Delay(interval, deadline.Token)
+                    .ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException error) when (!cancellationToken.IsCancellationRequested)
@@ -296,7 +300,8 @@ public sealed class SandboxResource : Resource
 
     public async Task DeleteAsync(string name, CancellationToken cancellationToken = default)
     {
-        using var result = await Client.JsonRequestAsync("DELETE", PathFor(name), cancellationToken: cancellationToken).ConfigureAwait(false);
+        using var result = await Client.JsonRequestAsync("DELETE", PathFor(name), cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
     }
 
     public Task<ApiResult> ListFileAsync(string id, string? path = null, CancellationToken cancellationToken = default)
@@ -314,7 +319,8 @@ public sealed class SandboxResource : Resource
     public async Task<ApiResult> UploadFileAsync(string id, string path, string file, CancellationToken cancellationToken = default)
     {
         using var stream = File.OpenRead(file);
-        return await UploadFileAsync(id, path, stream, cancellationToken).ConfigureAwait(false);
+        return await UploadFileAsync(id, path, stream, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <summary>读取调用者提供的流；方法结束后调用者仍拥有并负责释放该流。</summary>

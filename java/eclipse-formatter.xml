@@ -10,9 +10,12 @@
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_qualified_allocation_expression" value="0" />
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_parameters_in_constructor_declaration" value="0" />
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_parameters_in_method_declaration" value="0" />
-    <setting id="org.eclipse.jdt.core.formatter.alignment_for_selector_in_method_invocation" value="0" />
+    <!-- Alignment 81 keeps the first call inline, then puts each chained call on its own line. -->
+    <!-- createAlignmentValue(true, WRAP_NEXT_PER_LINE, INDENT_DEFAULT) -->
+    <setting id="org.eclipse.jdt.core.formatter.alignment_for_selector_in_method_invocation" value="81" />
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_expressions_in_switch_case_with_arrow" value="0" />
     <setting id="org.eclipse.jdt.core.formatter.join_wrapped_lines" value="true" />
+    <setting id="org.eclipse.jdt.core.formatter.use_on_off_tags" value="true" />
     <setting id="org.eclipse.jdt.core.formatter.wrap_outer_expressions_when_nested" value="false" />
     <!-- Use a generous width so ordinary signatures and calls are not split to meet a column limit. -->
     <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="9999" />

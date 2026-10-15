@@ -64,7 +64,8 @@ public final class CancellationToken implements AutoCloseable {
             try {
                 wait(Math.max(1, duration.toMillis()));
             } catch (InterruptedException error) {
-                Thread.currentThread().interrupt();
+                Thread.currentThread()
+                        .interrupt();
                 throw new ThinkAIException("操作已中断。", null, "", error);
             }
             throwIfCancelled();

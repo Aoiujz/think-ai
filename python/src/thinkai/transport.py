@@ -178,7 +178,11 @@ class AsyncBinaryStream:
         self.response = response
         self.deadline = deadline
         self._closed = False
-        self._timer = asyncio.get_running_loop().call_at(deadline, self._expire)
+        self._timer = (
+            asyncio
+            .get_running_loop()
+            .call_at(deadline, self._expire)
+        )  # fmt: skip
         self._close_task: asyncio.Task | None = None
 
     def _expire(self):
@@ -189,7 +193,11 @@ class AsyncBinaryStream:
         # user code processing an event must not inherit our task cancellation.
         iterator = iterator.__aiter__()
         while True:
-            remaining = self.deadline - asyncio.get_running_loop().time()
+            remaining = self.deadline - (
+                asyncio
+                .get_running_loop()
+                .time()
+            )  # fmt: skip
             if remaining <= 0:
                 raise OperationTimeout("ThinkAI operation timed out")
             try:
@@ -201,14 +209,22 @@ class AsyncBinaryStream:
 
     async def __aiter__(self) -> AsyncIterator[bytes]:
         try:
-            if asyncio.get_running_loop().time() >= self.deadline:
+            if (
+                asyncio
+                .get_running_loop()
+                .time()
+            ) >= self.deadline:  # fmt: skip
                 raise OperationTimeout("ThinkAI operation timed out")
             async for chunk in self._timed(self.response.aiter_bytes()):
                 yield chunk
         except TimeoutError as exc:
             raise OperationTimeout("ThinkAI operation timed out") from exc
         except httpx.HTTPError as exc:
-            if asyncio.get_running_loop().time() >= self.deadline:
+            if (
+                asyncio
+                .get_running_loop()
+                .time()
+            ) >= self.deadline:  # fmt: skip
                 raise OperationTimeout("ThinkAI operation timed out") from exc
             raise TransportError(str(exc)) from exc
         finally:
@@ -235,14 +251,22 @@ class AsyncBinaryStream:
 class AsyncEventStream(AsyncBinaryStream):
     async def __aiter__(self) -> AsyncIterator[Any]:
         try:
-            if asyncio.get_running_loop().time() >= self.deadline:
+            if (
+                asyncio
+                .get_running_loop()
+                .time()
+            ) >= self.deadline:  # fmt: skip
                 raise OperationTimeout("ThinkAI operation timed out")
             async for event in _async_sse(self._timed(self.response.aiter_lines())):
                 yield event
         except TimeoutError as exc:
             raise OperationTimeout("ThinkAI operation timed out") from exc
         except httpx.HTTPError as exc:
-            if asyncio.get_running_loop().time() >= self.deadline:
+            if (
+                asyncio
+                .get_running_loop()
+                .time()
+            ) >= self.deadline:  # fmt: skip
                 raise OperationTimeout("ThinkAI operation timed out") from exc
             raise TransportError(str(exc)) from exc
         finally:
@@ -265,7 +289,11 @@ def request(client: httpx.Client, timeout: float, method: str, url: str, *, forc
         if force_binary:
             retained = True
             return BinaryStream(response, guard)
-        content_type = response.headers.get("content-type", "").lower()
+        content_type = (
+            response.headers
+            .get("content-type", "")
+            .lower()
+        )  # fmt: skip
         if "text/event-stream" in content_type:
             retained = True
             return EventStream(response, guard)
@@ -291,7 +319,11 @@ def request(client: httpx.Client, timeout: float, method: str, url: str, *, forc
 
 
 async def async_request(client: httpx.AsyncClient, timeout: float, method: str, url: str, *, force_binary=False, **kwargs):
-    deadline = asyncio.get_running_loop().time() + timeout
+    deadline = (
+        asyncio
+        .get_running_loop()
+        .time()
+    ) + timeout  # fmt: skip
     response = None
     retained = False
     try:
@@ -303,7 +335,11 @@ async def async_request(client: httpx.AsyncClient, timeout: float, method: str, 
             if force_binary:
                 retained = True
                 return AsyncBinaryStream(response, deadline)
-            content_type = response.headers.get("content-type", "").lower()
+            content_type = (
+                response.headers
+                .get("content-type", "")
+                .lower()
+            )  # fmt: skip
             if "text/event-stream" in content_type:
                 retained = True
                 return AsyncEventStream(response, deadline)

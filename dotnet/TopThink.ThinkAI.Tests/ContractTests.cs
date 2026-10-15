@@ -32,7 +32,8 @@ public sealed class ContractServer : IAsyncLifetime
         start.ArgumentList.Add(Path.Combine(Root, "tests", "contracts", "server.mjs"));
         start.Environment["PORT"] = "0";
         _process = Process.Start(start)!;
-        string line = await _process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(15))
+        string line = await _process.StandardOutput.ReadLineAsync()
+            .WaitAsync(TimeSpan.FromSeconds(15))
             ?? throw new InvalidOperationException("协议服务未启动。");
         Endpoint = new Uri(JsonNode.Parse(line)!["endpoint"]!.GetValue<string>());
     }
@@ -107,10 +108,14 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
             string resource = entry!["resource"]!.GetValue<string>(),
                 operation = entry["operation"]!.GetValue<string>();
             string Capital(string value) => char.ToUpperInvariant(value[0]) + value[1..];
-            object target = typeof(ThinkAIClient).GetProperty(Capital(resource))!.GetValue(client)!;
-            var method = target.GetType().GetMethods().First(x => x.Name == Capital(operation) + "Async" && (operation != "uploadFile" || x.GetParameters().Any(p => p.ParameterType == typeof(Stream))));
+            object target = typeof(ThinkAIClient).GetProperty(Capital(resource))!
+                .GetValue(client)!;
+            var method = target.GetType()
+                .GetMethods()
+                .First(x => x.Name == Capital(operation) + "Async" && (operation != "uploadFile" || x.GetParameters().Any(p => p.ParameterType == typeof(Stream))));
             using var upload = new MemoryStream(new byte[] { 0, 1, 255, 42 });
-            object?[] arguments = method.GetParameters().Select(parameter => parameter.Name switch
+            object?[] arguments = method.GetParameters()
+                .Select(parameter => parameter.Name switch
             {
                 "parameters" => (object)P(),
                 "id" or "name" => "box",
@@ -127,10 +132,13 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
                 "waitTimeout" or "pollInterval" => null,
                 "cancellationToken" => (object)CancellationToken.None,
                 _ => throw new InvalidOperationException(parameter.Name)
-            }).ToArray();
+            })
+                .ToArray();
             var task = (Task)method.Invoke(target, arguments)!;
             await task;
-            using var result = task.GetType().GetProperty("Result")?.GetValue(task) as ApiResult;
+            using var result = task.GetType()
+                .GetProperty("Result")
+                ?.GetValue(task) as ApiResult;
             if (result?.Kind == ResultKind.Events)
             {
                 await Events(result);
@@ -266,7 +274,8 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
         Assert.Equal(403, error.StatusCode);
         await Assert.ThrowsAsync<ThinkAIException>(() => client.Avatar.VideoAsync(P("wait-timeout"), true, TimeSpan.FromMilliseconds(40), TimeSpan.FromMilliseconds(2)));
         var requests = await server.Requests();
-        var queries = requests.Where(r => r!["path"]!.GetValue<string>() == "/avatar/query").ToArray();
+        var queries = requests.Where(r => r!["path"]!.GetValue<string>() == "/avatar/query")
+            .ToArray();
         Assert.All(queries, r => Assert.StartsWith("offline-task-", r!["body"]!["id"]!.GetValue<string>()));
     }
 

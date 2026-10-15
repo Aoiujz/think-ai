@@ -29,7 +29,11 @@ def main():
         temporary = Path(directory)
         snapshot = temporary / "snapshot"
         snapshot.mkdir()
-        names = subprocess.check_output(["git", "-c", "core.quotepath=false", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=ROOT).split(b"\0")
+        names = (
+            subprocess
+            .check_output(["git", "-c", "core.quotepath=false", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=ROOT)
+            .split(b"\0")
+        )  # fmt: skip
         for raw_name in names:
             if not raw_name:
                 continue
@@ -41,7 +45,12 @@ def main():
                 shutil.copyfile(source, destination)
         run(["git", "init", "--quiet"], snapshot)
         run(["git", "-c", "core.autocrlf=false", "add", "--all"], snapshot, stdout=subprocess.DEVNULL)
-        tree = subprocess.check_output(["git", "write-tree"], cwd=snapshot).decode().strip()
+        tree = (
+            subprocess
+            .check_output(["git", "write-tree"], cwd=snapshot)
+            .decode()
+            .strip()
+        )  # fmt: skip
         run(["git", "archive", "--format=zip", f"--output={archive}", tree], snapshot)
         with zipfile.ZipFile(archive) as package:
             files = package.namelist()

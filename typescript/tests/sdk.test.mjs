@@ -54,7 +54,9 @@ for (const operation of manifest) {
     const client = new Client('offline-token', { endpoint: endpoint + 'prefix/' });
     await consume(await client[operation.resource][operation.operation](...args(operation)));
     const entry = fixture.requests.at(-1);
-    const path = operation.path.replace('{id}', 'test').replace('{type}', 'chat').replace('{code}', 'fixture-model');
+    const path = operation.path.replace('{id}', 'test')
+      .replace('{type}', 'chat')
+      .replace('{code}', 'fixture-model');
     assert.equal(entry.path, '/prefix/' + path);
     assert.equal(entry.method, operation.http_method);
     assert.equal(entry.authorization, 'Bearer offline-token');

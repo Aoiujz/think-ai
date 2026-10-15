@@ -101,4 +101,6 @@ npm pack --dry-run
 npm run check:package
 ```
 
-开发依赖固定 Prettier 版本，采用 2 空格及单引号；普通函数定义和调用的参数列表保持单行，使用 1000 列参考宽度避免按 100 列拆分参数。对象、回调及控制语句的内部代码块仍展开。运行时代码不依赖 Prettier。在本目录执行 `npm run format` 修正源码、测试和仓库 JS 工具的格式，`npm run format:check` 进行只读检查。CI 在测试前执行相同检查；编辑器可读取根目录 `.editorconfig` 和 `.prettierrc.json`。
+开发依赖固定 Prettier 3.9.10、ESLint 10.12.0、ESLint Stylistic 5.10.0 及 TypeScript 解析器 8.71.2。采用 2 空格及单引号，普通函数定义和调用的参数列表保持单行，使用 1000 列参考宽度避免按 100 列拆分参数。独立的连续调用链每个方法一行，参数内部嵌套的链保留单行；对象、回调及控制语句的内部代码块仍展开。
+
+开发格式工具使用 Node.js 22.13+ 或 24+；SDK 运行时仍支持 Node.js 22+。在本目录执行 `npm run format`，由统一脚本依次应用 Prettier、链式换行规则和缩进；`npm run format:check` 只读比对相同输出，CI 在测试前执行该命令。编辑器使用根 `.editorconfig`、`.prettierrc.json` 与本目录 `eslint.config.mjs`；统一命令同时覆盖 SDK、测试和仓库 JS 工具。格式工具均为开发依赖。

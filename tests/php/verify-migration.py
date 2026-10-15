@@ -15,7 +15,12 @@ def main():
     parser.add_argument("--baseline", default="978af2d")
     parser.add_argument("--php", default="php")
     args = parser.parse_args()
-    files = subprocess.check_output(["git", "ls-tree", "-r", "--name-only", args.baseline, "src/"], cwd=ROOT).decode().splitlines()
+    files = (
+        subprocess
+        .check_output(["git", "ls-tree", "-r", "--name-only", args.baseline, "src/"], cwd=ROOT)
+        .decode()
+        .splitlines()
+    )  # fmt: skip
     if len(files) != 18:
         raise RuntimeError("Expected the original 18-file PHP SDK snapshot")
     with tempfile.TemporaryDirectory(prefix="thinkai-php-baseline-") as directory:

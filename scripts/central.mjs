@@ -6,7 +6,9 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 const PORTAL = 'https://central.sonatype.com/api/v1/publisher/';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const hash = (bytes) => createHash('sha256')
+  .update(bytes)
+  .digest('hex');
 
 export class CentralError extends Error {
   constructor(message, details = {}) {
@@ -21,7 +23,8 @@ function credentials(environment) {
   if (!username || !password) {
     throw new CentralError('CENTRAL_TOKEN_USERNAME and CENTRAL_TOKEN_PASSWORD are required');
   }
-  return 'Bearer ' + Buffer.from(username + ':' + password, 'utf8').toString('base64');
+  return 'Bearer ' + Buffer.from(username + ':' + password, 'utf8')
+    .toString('base64');
 }
 function safe(value, environment) {
   let result = String(value);
@@ -29,8 +32,10 @@ function safe(value, environment) {
   if (environment.CENTRAL_TOKEN_USERNAME && environment.CENTRAL_TOKEN_PASSWORD) {
     secrets.push(Buffer.from(environment.CENTRAL_TOKEN_USERNAME + ':' + environment.CENTRAL_TOKEN_PASSWORD).toString('base64'));
   }
-  for (const secret of secrets.filter(Boolean).sort((a, b) => b.length - a.length)) {
-    result = result.split(secret).join('[redacted]');
+  for (const secret of secrets.filter(Boolean)
+    .sort((a, b) => b.length - a.length)) {
+    result = result.split(secret)
+      .join('[redacted]');
   }
   return result;
 }

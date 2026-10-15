@@ -107,7 +107,7 @@ python -m build python
 python python/scripts/check_package.py
 ```
 
-代码格式使用开发依赖中的固定版本 Ruff 0.17.0，统一配置位于 `python/pyproject.toml`，目标 Python 3.11，行尾 LF。函数签名和普通调用的参数保持单行，控制流和方法体展开；复杂字典、多行字符串等内部结构可继续分行。配置使用行宽 1000，并忽略会强制竖排的末尾逗号；Ruff 支持的行宽范围为 1–65535。以下命令在仓库根目录运行，覆盖 Python SDK 和跨目录 Python 开发脚本；只运行 formatter，嵌入的其他语言代码字符串保持原样。
+代码格式使用开发依赖中的固定版本 Ruff 0.17.0，统一配置位于 `python/pyproject.toml`，目标 Python 3.11，行尾 LF。函数签名和普通调用的参数保持单行，控制流和方法体展开；复杂字典、多行字符串等内部结构可继续分行。连续接收者的方法调用每个方法单独一行，使用局部 `# fmt: skip` 保留，因为 Ruff 没有对应的原生换行配置；属性访问链及构造器后的单个方法无需展开。嵌在其他调用参数中的方法链保留外层实参单行。配置使用行宽 1000，并忽略会强制竖排的末尾逗号；Ruff 支持的行宽范围为 1–65535。以下命令在仓库根目录运行，覆盖 Python SDK 和跨目录 Python 开发脚本；只运行 formatter，嵌入的其他语言代码字符串保持原样。
 
 ```bash
 python -m ruff format --config python/pyproject.toml python java/scripts dotnet/scripts tests/php tests/packaging scripts/central-bundle.py

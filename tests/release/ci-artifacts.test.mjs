@@ -8,7 +8,9 @@ import { stage, main } from '../../scripts/ci-artifacts.mjs';
 
 const SOURCES = ['composer.json', 'php/VERSION', 'python/pyproject.toml', 'python/src/thinkai/_version.py', 'typescript/package.json', 'typescript/package-lock.json', 'typescript/src/version.ts', 'java/pom.xml', 'java/src/main/java/com/topthink/ai/ThinkAIClient.java', 'dotnet/TopThink.ThinkAI/TopThink.ThinkAI.csproj', 'dotnet/TopThink.ThinkAI/ThinkAIClient.cs'];
 const SUPPORTED = ['php', 'python', 'typescript', 'java', 'dotnet'];
-const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const sha = (bytes) => createHash('sha256')
+  .update(bytes)
+  .digest('hex');
 
 function fixture(t) {
   const base = join(ROOT, '.artifacts/ci-artifact-tests');
@@ -85,7 +87,8 @@ for (const sdk of SUPPORTED) {
   test(`${sdk}: missing current package rejects even when old packages exist`, (t) => {
     const root = fixture(t),
       { info } = packages(root, sdk);
-    const missing = expectedArtifacts(sdk, info.version).find((name) => !name.endsWith('.pom'));
+    const missing = expectedArtifacts(sdk, info.version)
+      .find((name) => !name.endsWith('.pom'));
     rmSync(sourcePath(root, sdk, missing));
     assert.throws(() => stage(root, sdk), /Missing current/);
     assert.equal(existsSync(join(root, '.artifacts/ci', sdk)), false);

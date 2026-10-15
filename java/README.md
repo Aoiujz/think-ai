@@ -27,7 +27,8 @@ try (var client = ThinkAIClient.builder(System.getenv("THINKAI_TOKEN"))
         .pollInterval(Duration.ofSeconds(5))
         .httpClient(HttpClient.newHttpClient()) // 可选；SDK 不改变注入客户端配置
         .build()) {
-    try (var result = client.chat().completions(Map.of("model", "你的模型", "stream", false, "messages", List.of(Map.of("role", "user", "content", "你好"))))) {
+    try (var result = client.chat()
+            .completions(Map.of("model", "你的模型", "stream", false, "messages", List.of(Map.of("role", "user", "content", "你好"))))) {
         if (result instanceof ApiResult.Json json) {
             System.out.println(json.value());
         }
@@ -40,7 +41,8 @@ try (var client = ThinkAIClient.builder(System.getenv("THINKAI_TOKEN"))
 所有请求返回封闭类型 `ApiResult`：`Json`（Jackson `JsonNode`）、`Events`、`Binary` 或 `Empty`。按服务器实际 Content-Type 判别，包括 Chat/Audio/Command；下载操作始终返回原始 Binary，JSON 文件也不会被重写。HTTP 204/205 返回 Empty。`Json.value()` 可为 JSON null，不应当作 Empty。
 
 ```java
-try (var result = client.chat().completions(Map.of("model", "你的模型", "messages", List.of(Map.of("role", "user", "content", "你好"))))) {
+try (var result = client.chat()
+        .completions(Map.of("model", "你的模型", "messages", List.of(Map.of("role", "user", "content", "你好"))))) {
     if (result instanceof ApiResult.Events events) {
         for (var event : events.stream()) {
             System.out.println(event.data()); // 保留原始事件数据
@@ -63,49 +65,87 @@ Map<String, Object> p = new LinkedHashMap<>();
 p.put("model", "你的模型");
 p.put("prompt", "示例输入");
 
-client.responses().create(p);
-client.chat().completions(p);
-client.images().generations(p);
-client.images().inpainting(p);
-client.images().outpainting(p);
-client.images().upscale(p);
-client.images().poster(p);
-client.images().edit(p);
-client.videos().generations(p);
-client.videos().query(Map.of("model", "你的模型", "id", "创建时返回的任务ID"));
-client.audio().speech(p); // 可能为 JSON、SSE 或二进制
-client.audio().transcriptions(p);
-client.avatar().video(p); // 默认立即返回任务
-client.avatar().query(Map.of("model", "你的模型", "id", "创建时返回的任务ID"));
-client.music().song(p);
-client.music().bgm(p);
-client.music().query(Map.of("model", "你的模型", "id", "任务ID"));
-client.embeddings().create(p);
-client.rerank().create(p);
-client.decision().evaluate(p);
-client.plugin().list(Map.of());
-client.model().list(Map.of("type", "chat"));
-client.model().show("chat", "模型代码");
-client.sandbox().create("demo"); // 也可 create()，name 为 null
-client.sandbox().get("sandbox-id");
-client.sandbox().listFile("sandbox-id", "/workspace");
-client.sandbox().readFile("sandbox-id", "/workspace/main.py");
-client.sandbox().writeFile("sandbox-id", "/workspace/main.py", "print('hello')");
-client.sandbox().editFile("sandbox-id", "/workspace/main.py", "hello", "你好");
-client.sandbox().uploadFile("sandbox-id", "/workspace/input.txt", java.nio.file.Path.of("input.txt"));
-client.sandbox().downloadFile("sandbox-id", "/workspace/output.bin");
-client.sandbox().runCode("sandbox-id", "print('hello')", List.of(Map.of("url", "https://example.com/input.txt", "name", "input.txt")));
-client.sandbox().runCommand("sandbox-id", "echo hello", true);
-client.sandbox().delete("sandbox-id");
-client.skill().list(Map.of("category_id", 1));
-client.skill().categories();
-client.skill().download("列表返回的技能包路径");
+client.responses()
+        .create(p);
+client.chat()
+        .completions(p);
+client.images()
+        .generations(p);
+client.images()
+        .inpainting(p);
+client.images()
+        .outpainting(p);
+client.images()
+        .upscale(p);
+client.images()
+        .poster(p);
+client.images()
+        .edit(p);
+client.videos()
+        .generations(p);
+client.videos()
+        .query(Map.of("model", "你的模型", "id", "创建时返回的任务ID"));
+client.audio()
+        .speech(p); // 可能为 JSON、SSE 或二进制
+client.audio()
+        .transcriptions(p);
+client.avatar()
+        .video(p); // 默认立即返回任务
+client.avatar()
+        .query(Map.of("model", "你的模型", "id", "创建时返回的任务ID"));
+client.music()
+        .song(p);
+client.music()
+        .bgm(p);
+client.music()
+        .query(Map.of("model", "你的模型", "id", "任务ID"));
+client.embeddings()
+        .create(p);
+client.rerank()
+        .create(p);
+client.decision()
+        .evaluate(p);
+client.plugin()
+        .list(Map.of());
+client.model()
+        .list(Map.of("type", "chat"));
+client.model()
+        .show("chat", "模型代码");
+client.sandbox()
+        .create("demo"); // 也可 create()，name 为 null
+client.sandbox()
+        .get("sandbox-id");
+client.sandbox()
+        .listFile("sandbox-id", "/workspace");
+client.sandbox()
+        .readFile("sandbox-id", "/workspace/main.py");
+client.sandbox()
+        .writeFile("sandbox-id", "/workspace/main.py", "print('hello')");
+client.sandbox()
+        .editFile("sandbox-id", "/workspace/main.py", "hello", "你好");
+client.sandbox()
+        .uploadFile("sandbox-id", "/workspace/input.txt", java.nio.file.Path.of("input.txt"));
+client.sandbox()
+        .downloadFile("sandbox-id", "/workspace/output.bin");
+client.sandbox()
+        .runCode("sandbox-id", "print('hello')", List.of(Map.of("url", "https://example.com/input.txt", "name", "input.txt")));
+client.sandbox()
+        .runCommand("sandbox-id", "echo hello", true);
+client.sandbox()
+        .delete("sandbox-id");
+client.skill()
+        .list(Map.of("category_id", 1));
+client.skill()
+        .categories();
+client.skill()
+        .download("列表返回的技能包路径");
 ```
 
 上传同时接受 `Path` 或 `InputStream`，multipart 字段固定为 `path` 和 `file`，文件名取远端 path 的 basename。调用者传入的流由调用者关闭。下载保存例：
 
 ```java
-try (var result = client.sandbox().downloadFile("sandbox-id", "/workspace/output.bin")) {
+try (var result = client.sandbox()
+        .downloadFile("sandbox-id", "/workspace/output.bin")) {
     if (result instanceof ApiResult.Binary binary) {
         java.nio.file.Files.copy(binary.stream(), java.nio.file.Path.of("output.bin"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
     }
@@ -118,7 +158,8 @@ try (var result = client.sandbox().downloadFile("sandbox-id", "/workspace/output
 try (var cancellation = new CancellationToken()) {
     var options = new RequestOptions(Duration.ofSeconds(60), cancellation);
     // 另一线程可以调用 cancellation.cancel()。
-    try (var result = client.avatar().video(p, true, Duration.ofSeconds(300), Duration.ofSeconds(5), options)) {
+    try (var result = client.avatar()
+            .video(p, true, Duration.ofSeconds(300), Duration.ofSeconds(5), options)) {
         System.out.println(result.json());
     }
     // 其他方法以最后一个参数传 options，例如 client.images().generations(p, options)。
@@ -130,8 +171,10 @@ Avatar 等待从收到创建结果后计时，只轮询原始 ID/model。`proces
 客户端默认操作总时限 300 秒，覆盖等待响应头和读取完整 JSON/SSE/二进制响应；请求级 `RequestOptions.timeout` 可覆盖。调用者取消、线程中断和关闭客户端会终止活动请求；流式读取也受取消与同一时限约束。注入客户端由调用者持有，JDK17 没有 HttpClient.close，SDK 通过自身取消源终止它发起的请求。
 
 ```java
-try { client.images().generations(p); }
-catch (ThinkAIException error) {
+try {
+    client.images()
+            .generations(p);
+} catch (ThinkAIException error) {
     System.err.println(error.statusCode()); // 传输错误可为 null
     System.err.println(error.rawBody());
     System.err.println(error.getCause());   // 存在底层异常时保留
@@ -149,7 +192,7 @@ mvn -f java/pom.xml -B spotless:apply
 mvn -f java/pom.xml -B spotless:check
 ```
 
-配置固定为 Spotless Maven 3.10.4 与 Eclipse JDT 4.26，Java 主源码和测试使用 `eclipse-formatter.xml` 的 4 空格缩进。普通方法签名和调用的参数保持单行，合并已有参数换行，不强制按 100 列拆分，也不重新切分字符串；匿名函数和匿名类的块内容仍可分行。控制语句使用大括号，非空方法体、条件和循环体展开为多行。POM 使用 Eclipse WTP 4.21.0 与 `xml-format.properties` 的 2 空格 XML 排版，保留元素顺序。格式化不绑定 `verify`，CI 在 JDK 17 上单独执行 `spotless:check`。Maven 接入见 [Spotless 文档](https://github.com/diffplug/spotless/tree/main/plugin-maven#eclipse-jdt)，参数换行、合并和代码块选项见 [Eclipse 官方格式配置](https://help.eclipse.org/latest/topic/org.eclipse.jdt.doc.isv/reference/api/org/eclipse/jdt/core/formatter/DefaultCodeFormatterConstants.html)。
+配置固定为 Spotless Maven 3.10.4 与 Eclipse JDT 4.26，Java 主源码和测试使用 `eclipse-formatter.xml` 的 4 空格缩进。链式调用从第二个方法起逐个换行，每次调用的参数列表和方法签名的参数保持单行；单次调用不拆开。参数内部嵌套的调用链也保持单行，必要时使用局部 `@formatter:off`/`@formatter:on` 标记；匿名函数和匿名类块仍按块换行。不强制按 100 列拆分，也不重新切分字符串。控制语句使用大括号，非空方法体、条件和循环体展开为多行。POM 使用 Eclipse WTP 4.21.0 与 `xml-format.properties` 的 2 空格 XML 排版，保留元素顺序。格式化不绑定 `verify`，CI 在 JDK 17 上单独执行 `spotless:check`；已关闭增量缓存，让外部配置文件更新立即生效。Maven 接入见 [Spotless 文档](https://github.com/diffplug/spotless/tree/main/plugin-maven#eclipse-jdt)，参数换行、合并和代码块选项见 [Eclipse 官方格式配置](https://help.eclipse.org/latest/topic/org.eclipse.jdt.doc.isv/reference/api/org/eclipse/jdt/core/formatter/DefaultCodeFormatterConstants.html)。
 
 ## 离线验证与打包
 

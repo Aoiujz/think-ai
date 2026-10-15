@@ -17,7 +17,12 @@ def run(args, cwd=SDK):
 
 
 def main():
-    version = ET.parse(SDK / "TopThink.ThinkAI/TopThink.ThinkAI.csproj").getroot().findtext("./PropertyGroup/Version")
+    version = (
+        ET
+        .parse(SDK / "TopThink.ThinkAI/TopThink.ThinkAI.csproj")
+        .getroot()
+        .findtext("./PropertyGroup/Version")
+    )  # fmt: skip
     if not version or not version.strip():
         raise SystemExit("TopThink.ThinkAI.csproj must declare Version.")
     version = version.strip()

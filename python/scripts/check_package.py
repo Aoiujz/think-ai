@@ -19,7 +19,11 @@ import zipfile
 project = Path(__file__).resolve().parents[1]
 metadata = tomllib.loads((project / "pyproject.toml").read_text(encoding="utf-8"))["project"]
 version = metadata["version"]
-distribution = re.sub(r"[-_.]+", "_", metadata["name"]).lower()
+distribution = (
+    re
+    .sub(r"[-_.]+", "_", metadata["name"])
+    .lower()
+)  # fmt: skip
 parser = argparse.ArgumentParser()
 parser.add_argument("--pip-python", default=sys.executable)
 args = parser.parse_args()
@@ -48,7 +52,11 @@ for artifact in artifacts:
             assert any(name.endswith("LICENSE") for name in archive.getnames())
     with tempfile.TemporaryDirectory(prefix="consumer-", dir=workspace) as directory:
         consumer = Path(directory)
-        assert consumer.resolve().is_relative_to(workspace.resolve())
+        assert (
+            consumer
+            .resolve()
+            .is_relative_to(workspace.resolve())
+        )  # fmt: skip
         target = consumer / "venv"
         venv.EnvBuilder(with_pip=False).create(target)
         executable = target / ("Scripts/python.exe" if os.name == "nt" else "bin/python")

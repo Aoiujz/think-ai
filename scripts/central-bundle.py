@@ -26,21 +26,34 @@ def build_bundle(manifest_path: Path, output_path: Path):
         if path.parent != directory or signature_path.parent != directory or path.name != item["name"] or signature_path.name != path.name + ".asc":
             raise ValueError("Artifacts and signatures must remain in the bundle output directory")
         contents, signature = path.read_bytes(), signature_path.read_bytes()
-        if len(contents) != item["size"] or hashlib.sha256(contents).hexdigest() != item["sha256"]:
+        if len(contents) != item["size"] or (
+            hashlib
+            .sha256(contents)
+            .hexdigest()
+        ) != item["sha256"]:  # fmt: skip
             raise ValueError(f"Accepted artifact changed: {path.name}")
         if not signature.startswith(b"-----BEGIN PGP SIGNATURE-----") or b"-----END PGP SIGNATURE-----" not in signature:
             raise ValueError(f"Missing armored detached signature: {path.name}")
         entries[prefix + path.name] = contents
         entries[prefix + path.name + ".asc"] = signature
         for algorithm in ("md5", "sha1", "sha256", "sha512"):
-            entries[prefix + path.name + "." + algorithm] = hashlib.new(algorithm, contents).hexdigest().encode("ascii")
+            entries[prefix + path.name + "." + algorithm] = (
+                hashlib
+                .new(algorithm, contents)
+                .hexdigest()
+                .encode("ascii")
+            )  # fmt: skip
     with zipfile.ZipFile(output_path, "x", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as bundle:
         for name, contents in sorted(entries.items()):
             info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
             bundle.writestr(info, contents)
-    return {"bundle": str(output_path), "sha256": hashlib.sha256(output_path.read_bytes()).hexdigest()}
+    return {"bundle": str(output_path), "sha256": (
+        hashlib
+        .sha256(output_path.read_bytes())
+        .hexdigest()
+    )}  # fmt: skip
 
 
 if __name__ == "__main__":

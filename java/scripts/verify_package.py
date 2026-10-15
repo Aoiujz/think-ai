@@ -18,7 +18,12 @@ def run(args, cwd=SDK, env=None):
 
 
 def main():
-    version = ET.parse(SDK / "pom.xml").getroot().findtext("{http://maven.apache.org/POM/4.0.0}version")
+    version = (
+        ET
+        .parse(SDK / "pom.xml")
+        .getroot()
+        .findtext("{http://maven.apache.org/POM/4.0.0}version")
+    )  # fmt: skip
     if not version or not version.strip():
         raise SystemExit("java/pom.xml must declare its own project version.")
     version = version.strip()
@@ -90,7 +95,11 @@ public class Consumer {
         command = [java]
         if environment.get("THINKAI_JAVA_SOCKET_DIR"):
             command.append("-Djdk.net.unixdomain.tmpdir=" + environment["THINKAI_JAVA_SOCKET_DIR"])
-        command += ["-cp", str(consumer / "target/classes") + os.pathsep + classpath_file.read_text(encoding="utf-8").strip(), "Consumer", endpoint, version]
+        command += ["-cp", str(consumer / "target/classes") + os.pathsep + (
+            classpath_file
+            .read_text(encoding="utf-8")
+            .strip()
+        ), "Consumer", endpoint, version]  # fmt: skip
         run(command, cwd=consumer, env=environment)
     finally:
         node.terminate()

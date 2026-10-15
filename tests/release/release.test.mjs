@@ -11,7 +11,9 @@ import { ROOT, SDKS, versionInfo, prepare, tagFor, stableVersion, expectedArtifa
 const SOURCE_FILES = ['composer.json', 'php/VERSION', 'python/pyproject.toml', 'python/src/thinkai/_version.py', 'python/README.md', 'typescript/package.json', 'typescript/package-lock.json', 'typescript/src/version.ts', 'typescript/README.md', 'go/client.go', 'go/go.mod', 'go/README.md', 'java/pom.xml', 'java/src/main/java/com/topthink/ai/ThinkAIClient.java', 'java/README.md', 'dotnet/TopThink.ThinkAI/TopThink.ThinkAI.csproj', 'dotnet/TopThink.ThinkAI/ThinkAIClient.cs', 'dotnet/README.md'];
 const COMMIT = 'a'.repeat(40),
   OTHER = 'b'.repeat(40);
-const hash = (value) => createHash('sha256').update(value).digest('hex');
+const hash = (value) => createHash('sha256')
+  .update(value)
+  .digest('hex');
 function fixture(t, git = false) {
   const workspace = join(ROOT, '.artifacts/release-tests');
   mkdirSync(workspace, { recursive: true });
@@ -43,16 +45,17 @@ function manifest(root, sdk, overrides = {}) {
     directory = join(root, '.artifacts/releases', sdk, info.version),
     output = join(directory, 'build-fixture');
   mkdirSync(output, { recursive: true });
-  const files = expectedArtifacts(sdk, info.version).map((name) => {
-    const contents = Buffer.from('test artifact ' + name),
-      path = join(output, name);
-    writeFileSync(path, contents);
-    return {
-      path: `.artifacts/releases/${sdk}/${info.version}/build-fixture/${name}`,
-      size: contents.length,
-      sha256: hash(contents),
-    };
-  });
+  const files = expectedArtifacts(sdk, info.version)
+    .map((name) => {
+      const contents = Buffer.from('test artifact ' + name),
+        path = join(output, name);
+      writeFileSync(path, contents);
+      return {
+        path: `.artifacts/releases/${sdk}/${info.version}/build-fixture/${name}`,
+        size: contents.length,
+        sha256: hash(contents),
+      };
+    });
   const result = { schema: 1, ...info, commit: COMMIT, dirty: false, files, ...overrides };
   writeFileSync(join(directory, 'manifest.json'), JSON.stringify(result));
   return result;
@@ -222,7 +225,8 @@ test('manifest rejects wrong commit, dirty build and escaped artifact paths', (t
   assert.throws(() => validateManifest(root, info, { commit: COMMIT }), /inside/);
 });
 function basenameForTest(path) {
-  return path.split('/').at(-1);
+  return path.split('/')
+    .at(-1);
 }
 test('annotated tags compare peeled commit and same-commit remote tags are reused', () => {
   const refs = parseRemoteRefs(`${OTHER}\trefs/tags/go/v0.1.0\n${COMMIT}\trefs/tags/go/v0.1.0^{}\n`);

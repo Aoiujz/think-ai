@@ -32,17 +32,24 @@ public final class ThinkAIClient implements AutoCloseable {
         if (builder.token == null || builder.token.isBlank()) {
             throw new IllegalArgumentException("token 不能为空。");
         }
-        if (!builder.endpoint.isAbsolute() || !Set.of("http", "https").contains(builder.endpoint.getScheme())) {
+        if (!builder.endpoint.isAbsolute() || !Set.of("http", "https")
+                .contains(builder.endpoint.getScheme())) {
             throw new IllegalArgumentException("endpoint 必须为 HTTP(S) 绝对地址。");
         }
         if (builder.timeout.isNegative() || builder.timeout.isZero() || builder.pollInterval.isNegative() || builder.pollInterval.isZero()) {
             throw new IllegalArgumentException("超时及轮询间隔必须大于零。");
         }
         token = builder.token;
+        // @formatter:off
         endpoint = URI.create(builder.endpoint.toString().replaceAll("/+$", "") + "/");
+        // @formatter:on
         timeout = builder.timeout;
         pollInterval = builder.pollInterval;
-        http = builder.http == null ? HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build() : builder.http;
+        http = builder.http == null
+                ? HttpClient.newBuilder()
+                        .followRedirects(HttpClient.Redirect.NEVER)
+                        .build()
+                : builder.http;
     }
 
     public static Builder builder(String token) {
@@ -93,7 +100,8 @@ public final class ThinkAIClient implements AutoCloseable {
     }
 
     static String segment(String text) {
-        return URLEncoder.encode(text, StandardCharsets.UTF_8).replace("+", "%20");
+        return URLEncoder.encode(text, StandardCharsets.UTF_8)
+                .replace("+", "%20");
     }
 
     private void queryPairs(List<String> pairs, String key, JsonNode value) {
@@ -101,7 +109,8 @@ public final class ThinkAIClient implements AutoCloseable {
             return;
         }
         if (value.isObject()) {
-            value.fields().forEachRemaining(entry -> queryPairs(pairs, key + "[" + entry.getKey() + "]", entry.getValue()));
+            value.fields()
+                    .forEachRemaining(entry -> queryPairs(pairs, key + "[" + entry.getKey() + "]", entry.getValue()));
             return;
         }
         if (value.isArray()) {
@@ -137,11 +146,17 @@ public final class ThinkAIClient implements AutoCloseable {
             query.forEach((key, value) -> queryPairs(pairs, key, mapper.valueToTree(value)));
         }
         URI uri = endpoint.resolve(path + (pairs.isEmpty() ? "" : "?" + String.join("&", pairs)));
-        var builder = HttpRequest.newBuilder(uri).timeout(operationTimeout).header("Authorization", "Bearer " + token).header("User-Agent", "ThinkAI-java/" + VERSION).header("Accept", "application/json, text/event-stream, application/octet-stream");
+        var builder = HttpRequest.newBuilder(uri)
+                .timeout(operationTimeout)
+                .header("Authorization", "Bearer " + token)
+                .header("User-Agent", "ThinkAI-java/" + VERSION)
+                .header("Accept", "application/json, text/event-stream, application/octet-stream");
         if (contentType != null) {
             builder.header("Content-Type", contentType);
         }
+        // @formatter:off
         var future = http.sendAsync(builder.method(method, publisher).build(), HttpResponse.BodyHandlers.ofInputStream());
+        // @formatter:on
         try (var registration = cancellation.register(() -> future.cancel(true)); var shutdown = closed.register(() -> future.cancel(true))) {
             HttpResponse<InputStream> response = future.get(Math.max(1, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
             int status = response.statusCode();
@@ -151,11 +166,17 @@ public final class ThinkAIClient implements AutoCloseable {
                     throw new ThinkAIException("ThinkAI HTTP " + status, status, new String(stream.readAllBytes(), StandardCharsets.UTF_8));
                 }
             }
-            if (status == 204 || status == 205 || (!binary && response.headers().firstValueAsLong("Content-Length").orElse(-1) == 0)) {
+            if (status == 204 || status == 205 || (!binary && response.headers()
+                    .firstValueAsLong("Content-Length")
+                    .orElse(-1) == 0)) {
                 stream.close();
                 return new ApiResult.Empty(status);
             }
-            String type = response.headers().firstValue("Content-Type").orElse("").split(";", 2)[0].trim().toLowerCase(Locale.ROOT);
+            String type = response.headers()
+                    .firstValue("Content-Type")
+                    .orElse("")
+                    .split(";", 2)[0].trim()
+                    .toLowerCase(Locale.ROOT);
             if (!binary && (type.equals("application/json") || type.endsWith("+json"))) {
                 try (stream) {
                     String raw = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
@@ -179,7 +200,8 @@ public final class ThinkAIClient implements AutoCloseable {
             return new ApiResult.Binary(status, stream);
         } catch (InterruptedException error) {
             future.cancel(true);
-            Thread.currentThread().interrupt();
+            Thread.currentThread()
+                    .interrupt();
             throw new ThinkAIException("操作已中断。", null, "", error);
         } catch (TimeoutException error) {
             future.cancel(true);
@@ -391,7 +413,8 @@ public final class ThinkAIClient implements AutoCloseable {
                 created.close();
                 throw new ThinkAIException("Avatar 创建响应不是 JSON。", created.statusCode(), "");
             }
-            JsonNode id = created.json().get("id");
+            JsonNode id = created.json()
+                    .get("id");
             created.close();
             if (id == null || id.isNull()) {
                 throw new ThinkAIException("Avatar 创建响应缺少 id。", created.statusCode(), "");
@@ -399,7 +422,11 @@ public final class ThinkAIClient implements AutoCloseable {
             long deadline = System.nanoTime() + waitTimeout.toNanos();
             while (true) {
                 var result = query(object("model", p.get("model"), "id", id), pollOptions(deadline, options, token));
-                String status = result instanceof ApiResult.Json json ? json.value().path("status").asText() : "";
+                String status = result instanceof ApiResult.Json json
+                        ? json.value()
+                                .path("status")
+                                .asText()
+                        : "";
                 if (status.equals("success") || status.equals("fail")) {
                     return result;
                 }
@@ -626,7 +653,10 @@ public final class ThinkAIClient implements AutoCloseable {
         private ApiResult upload(String id, String path, HttpRequest.BodyPublisher file, RequestOptions o) {
             String boundary = "thinkai-" + UUID.randomUUID();
             String filename = path.replace('\\', '/');
-            filename = filename.substring(filename.lastIndexOf('/') + 1).replace("\"", "%22").replace("\r", "%0D").replace("\n", "%0A");
+            filename = filename.substring(filename.lastIndexOf('/') + 1)
+                    .replace("\"", "%22")
+                    .replace("\r", "%0D")
+                    .replace("\n", "%0A");
             String prefix = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"path\"\r\n\r\n" + path + "\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"" + filename + "\"\r\nContent-Type: application/octet-stream\r\n\r\n";
             var body = HttpRequest.BodyPublishers.concat(HttpRequest.BodyPublishers.ofString(prefix, StandardCharsets.UTF_8), file, HttpRequest.BodyPublishers.ofString("\r\n--" + boundary + "--\r\n"));
             return execute("POST", path(id, "/upload"), body, "multipart/form-data; boundary=" + boundary, null, o);

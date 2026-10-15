@@ -25,7 +25,9 @@ const PREFIXES = {
   java: 'java/v',
   dotnet: 'dotnet/v',
 };
-const SHA256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const SHA256 = (bytes) => createHash('sha256')
+  .update(bytes)
+  .digest('hex');
 const text = (root, path) => readFileSync(join(root, path), 'utf8');
 const capture = (source, pattern, label) => {
   const match = source.match(pattern);
@@ -48,7 +50,8 @@ export function versionInfo(root, sdk) {
   sdkName(sdk);
   let version, runtime;
   if (sdk === 'php') {
-    version = text(root, 'php/VERSION').trim();
+    version = text(root, 'php/VERSION')
+      .trim();
     const composer = JSON.parse(text(root, 'composer.json'));
     if (composer.name !== PACKAGES.php || composer.autoload?.['psr-4']?.['think\\ai\\'] !== 'php/src/') {
       throw new Error('PHP Composer identity/autoload changed');
@@ -138,7 +141,8 @@ export function prepare(root, sdk, next, execute = false) {
   if (sdk !== 'php' && current.version !== next) {
     const path = `${sdk}/README.md`,
       before = text(root, path);
-    edits.set(path, { before, after: before.split(current.version).join(next) });
+    edits.set(path, { before, after: before.split(current.version)
+      .join(next) });
   }
   const changed = [...edits].filter(([, value]) => value.before !== value.after);
   // Parse all fields first; no file is written until every edit has been validated.
@@ -201,7 +205,8 @@ export function composerCommand(root, environment = process.env, platform = proc
   if (explicit || existsSync(local)) return ['php', [explicit || local]];
   if (platform === 'win32') {
     for (const entry of (environment.PATH || environment.Path || '').split(';')) {
-      const directory = entry.trim().replace(/^"(.*)"$/, '$1');
+      const directory = entry.trim()
+        .replace(/^"(.*)"$/, '$1');
       if (!directory) continue;
       const phar = join(directory, 'composer.phar'),
         executable = join(directory, 'composer.exe');
@@ -236,15 +241,16 @@ function tools(root, needMaven = false, needComposer = false) {
       process.env.MAVEN_HOME ||
       (directories.find((name) => name.startsWith('apache-maven-'))
         ? join(
-            javaTools,
-            directories.find((name) => name.startsWith('apache-maven-')),
-          )
+          javaTools,
+          directories.find((name) => name.startsWith('apache-maven-')),
+        )
         : pathMavenBin
           ? resolve(pathMavenBin, '..')
           : null);
     if (mavenHome) {
       const boot = join(mavenHome, 'boot'),
-        jar = readdirSync(boot).find((name) => /^plexus-classworlds-.*\.jar$/.test(name));
+        jar = readdirSync(boot)
+          .find((name) => /^plexus-classworlds-.*\.jar$/.test(name));
       if (!jar) throw new Error('Maven bootstrap JAR is missing');
       const java = environment.JAVA_HOME ? join(environment.JAVA_HOME, 'bin/java.exe') : 'java';
       maven = [java, ['-classpath', join(boot, jar), `-Dclassworlds.conf=${join(mavenHome, 'bin/m2.conf')}`, `-Dmaven.home=${mavenHome}`, `-Dmaven.multiModuleProjectDirectory=${join(root, 'java')}`, 'org.codehaus.plexus.classworlds.launcher.Launcher']];
@@ -274,7 +280,8 @@ export function validateManifest(root, info, state = gitState(root)) {
   if (manifest.schema !== 1 || manifest.sdk !== info.sdk || manifest.version !== info.version || manifest.tag !== info.tag || manifest.commit !== state.commit || manifest.dirty) {
     throw new Error('Release manifest is stale or was built from uncommitted files; commit/push, then rebuild');
   }
-  const expected = expectedArtifacts(info.sdk, info.version).sort();
+  const expected = expectedArtifacts(info.sdk, info.version)
+    .sort();
   if (
     !Array.isArray(manifest.files) ||
     manifest.files.length !== expected.length ||
@@ -287,7 +294,8 @@ export function validateManifest(root, info, state = gitState(root)) {
   }
   for (const file of manifest.files) {
     const artifact = resolve(root, file.path);
-    if (!artifact.startsWith(resolve(directory) + sep) || !realpathSync(artifact).startsWith(realpathSync(directory) + sep)) {
+    if (!artifact.startsWith(resolve(directory) + sep) || !realpathSync(artifact)
+      .startsWith(realpathSync(directory) + sep)) {
       throw new Error('Artifact must stay inside the release directory');
     }
     if (statSync(artifact).size !== file.size || SHA256(readFileSync(artifact)) !== file.sha256) {
@@ -315,7 +323,8 @@ export function build(root, sdk) {
     call(tool.python, ['-m', 'pytest', 'python/tests', '-q']);
     call(tool.python, ['python/scripts/check_package.py', ...(process.env.THINKAI_PIP_PYTHON ? ['--pip-python', process.env.THINKAI_PIP_PYTHON] : [])]);
     call(tool.python, ['-m', 'build', 'python', '--no-isolation', '--outdir', output]);
-    call(tool.python, ['-m', 'twine', 'check', '--strict', ...expectedArtifacts(sdk, info.version).map((name) => join(output, name))]);
+    call(tool.python, ['-m', 'twine', 'check', '--strict', ...expectedArtifacts(sdk, info.version)
+      .map((name) => join(output, name))]);
   } else if (sdk === 'typescript') {
     npm(['test']);
     npm(['run', 'check:package']);
@@ -348,15 +357,19 @@ export function build(root, sdk) {
     ...info,
     commit: after.commit,
     dirty: before.dirty || after.dirty,
-    built_at: new Date().toISOString(),
-    files: expectedArtifacts(sdk, info.version).map((name) => {
-      const path = join(output, name);
-      return {
-        path: relative(root, path).split(sep).join('/'),
-        size: statSync(path).size,
-        sha256: SHA256(readFileSync(path)),
-      };
-    }),
+    built_at: new Date()
+      .toISOString(),
+    files: expectedArtifacts(sdk, info.version)
+      .map((name) => {
+        const path = join(output, name);
+        return {
+          path: relative(root, path)
+            .split(sep)
+            .join('/'),
+          size: statSync(path).size,
+          sha256: SHA256(readFileSync(path)),
+        };
+      }),
   };
   writeFileSync(join(directory, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
   console.log(JSON.stringify(manifest, null, 2));
@@ -547,7 +560,8 @@ export async function publish(root, sdk, execute = false, dependencies = {}) {
     }
     if (sdk === 'dotnet') {
       const version = executeCommand('dotnet', ['--version'], { capture: true }).stdout.trim();
-      const [major, minor, patch] = version.split('.').map(Number);
+      const [major, minor, patch] = version.split('.')
+        .map(Number);
       if (!(major > 10 || (major === 10 && (minor > 0 || patch >= 300)))) {
         throw new Error('Publishing with NUGET_API_KEY requires .NET SDK 10.0.300+');
       }
@@ -570,14 +584,16 @@ export async function publish(root, sdk, execute = false, dependencies = {}) {
       ...info,
       commit: state.commit,
       stage: 'starting',
-      updated_at: new Date().toISOString(),
+      updated_at: new Date()
+        .toISOString(),
     };
     if (previous?.commit === state.commit && previous.deployment_id) {
       receipt.deployment_id = previous.deployment_id;
     }
     const save = (stage) => {
       receipt.stage = stage;
-      receipt.updated_at = new Date().toISOString();
+      receipt.updated_at = new Date()
+        .toISOString();
       writeFileSync(receiptPath, JSON.stringify(receipt, null, 2) + '\n');
     };
     // Recheck after all preflight subprocesses, immediately before the first write.
@@ -681,8 +697,9 @@ export async function main(argv = process.argv.slice(2), root = ROOT) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  main().catch((error) => {
-    console.error('Release error:', error.message);
-    process.exitCode = 1;
-  });
+  main()
+    .catch((error) => {
+      console.error('Release error:', error.message);
+      process.exitCode = 1;
+    });
 }

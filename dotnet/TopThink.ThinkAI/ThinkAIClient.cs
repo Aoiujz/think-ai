@@ -145,11 +145,13 @@ public sealed partial class ThinkAIClient : IDisposable
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
             request.Headers.UserAgent.ParseAdd("ThinkAI-dotnet/" + Version);
             request.Headers.Accept.ParseAdd("application/json, text/event-stream, application/octet-stream");
-            response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, lifetime.Token).ConfigureAwait(false);
+            response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, lifetime.Token)
+                .ConfigureAwait(false);
             int status = (int)response.StatusCode;
             if (!response.IsSuccessStatusCode)
             {
-                var raw = await response.Content.ReadAsStringAsync(lifetime.Token).ConfigureAwait(false);
+                var raw = await response.Content.ReadAsStringAsync(lifetime.Token)
+                    .ConfigureAwait(false);
                 throw new ThinkAIException($"ThinkAI HTTP {status}", status, raw);
             }
             if (status is 204 or 205 || (!binary && response.Content.Headers.ContentLength == 0))
@@ -161,7 +163,8 @@ public sealed partial class ThinkAIClient : IDisposable
             if (!binary &&
                 (type == "application/json" || type.EndsWith("+json", StringComparison.Ordinal)))
             {
-                var raw = await response.Content.ReadAsStringAsync(lifetime.Token).ConfigureAwait(false);
+                var raw = await response.Content.ReadAsStringAsync(lifetime.Token)
+                    .ConfigureAwait(false);
                 if (raw.Length == 0)
                 {
                     return new ApiResult(ResultKind.Empty, status);

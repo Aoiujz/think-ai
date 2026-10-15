@@ -42,7 +42,8 @@ export class BinaryStream implements AsyncIterable<Uint8Array>, AsyncDisposable 
     signal.addEventListener('abort', this.onAbort, { once: true });
   }
   private onAbort = () => {
-    void this.reader?.cancel().catch(() => {});
+    void this.reader?.cancel()
+      .catch(() => {});
   };
   protected check(): void {
     if (this.signal.aborted) throw this.signal.reason;
@@ -127,7 +128,8 @@ export class EventStream implements AsyncIterable<Json>, AsyncDisposable {
         let index: number;
         while ((index = buffer.indexOf('\n')) >= 0) {
           if (this.signal.aborted) throw this.signal.reason;
-          const line = buffer.slice(0, index).replace(/\r$/, '');
+          const line = buffer.slice(0, index)
+            .replace(/\r$/, '');
           buffer = buffer.slice(index + 1);
           if (line === '' && data.length) {
             const event = decode();
@@ -268,7 +270,8 @@ export async function request(config: TransportOptions, method: string, path: st
   } finally {
     if (!retained) {
       cleanup();
-      await response?.body?.cancel().catch(() => {});
+      await response?.body?.cancel()
+        .catch(() => {});
     }
   }
 }

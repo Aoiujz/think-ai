@@ -39,7 +39,8 @@ try {
   execFileSync(process.execPath, [join(project, 'node_modules/typescript/lib/tsc.js'), '--noEmit', '--strict', '--target', 'ES2022', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', '--skipLibCheck', 'consumer.mts', 'consumer.cts'], { cwd: directory, stdio: 'inherit' });
   console.log('Installed ESM/CommonJS declaration consumers OK');
 } finally {
-  if (!resolve(directory).startsWith(resolve(workspace) + sep)) {
+  if (!resolve(directory)
+    .startsWith(resolve(workspace) + sep)) {
     throw new Error('Refusing to remove an unexpected consumer directory');
   }
   rmSync(directory, { recursive: true, force: true });

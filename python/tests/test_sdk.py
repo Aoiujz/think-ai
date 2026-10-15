@@ -27,7 +27,11 @@ def args(operation):
 
 
 def method(client, operation):
-    snake = re.sub(r"(?<!^)(?=[A-Z])", "_", operation["operation"]).lower()
+    snake = (
+        re
+        .sub(r"(?<!^)(?=[A-Z])", "_", operation["operation"])
+        .lower()
+    )  # fmt: skip
     return getattr(getattr(client, operation["resource"]), snake)
 
 
@@ -39,8 +43,17 @@ def test_all_sync_routes(endpoint, operation):
             assert list(result)
         elif isinstance(result, BinaryStream):
             assert result.read()
-    entry = httpx.get(endpoint + "__requests").json()[-1]
-    expected = operation["path"].replace("{id}", "test").replace("{type}", "chat").replace("{code}", "fixture-model")
+    entry = (
+        httpx
+        .get(endpoint + "__requests")
+        .json()
+    )[-1]  # fmt: skip
+    expected = (
+        operation["path"]
+        .replace("{id}", "test")
+        .replace("{type}", "chat")
+        .replace("{code}", "fixture-model")
+    )  # fmt: skip
     assert entry["method"] == operation["http_method"]
     assert entry["path"] == "/prefix/" + expected
     assert entry["authorization"] == "Bearer offline-token"

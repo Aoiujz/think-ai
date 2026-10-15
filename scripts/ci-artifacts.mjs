@@ -18,7 +18,8 @@ export function stage(root, sdk) {
     const source = sdk === 'php' ? join(root, '.artifacts/think-ai-php.zip') : sdk === 'python' ? join(root, 'python/dist', name) : sdk === 'typescript' ? join(root, 'typescript', name) : sdk === 'java' ? join(root, name.endsWith('.pom') ? 'java/pom.xml' : 'java/target/' + name) : join(root, 'dotnet/artifacts', name);
     let present = false;
     try {
-      present = statSync(source).isFile();
+      present = statSync(source)
+        .isFile();
     } catch {
       /* Give a useful missing-current-version error below. */
     }
@@ -33,7 +34,9 @@ export function stage(root, sdk) {
     const destination = join(path, name);
     copyFileSync(source, destination);
     const bytes = readFileSync(destination);
-    return { name, size: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+    return { name, size: bytes.length, sha256: createHash('sha256')
+      .update(bytes)
+      .digest('hex') };
   });
   writeFileSync(join(path, 'manifest.json'), JSON.stringify({ schema: 1, sdk, package: info.package, version: info.version, files }, null, 2) + '\n');
   return { version: info.version, path, files };

@@ -26,7 +26,9 @@ public final class EventStream implements Iterable<EventStream.Event>, Iterator<
 
     EventStream(InputStream stream, ObjectMapper mapper, int status) {
         this.stream = stream;
+        // @formatter:off
         this.reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)));
+        // @formatter:on
         this.mapper = mapper;
         this.status = status;
     }
@@ -67,7 +69,8 @@ public final class EventStream implements Iterable<EventStream.Event>, Iterator<
                 if (line == null || line.isEmpty()) {
                     if (!data.isEmpty()) {
                         String raw = String.join("\n", data);
-                        if (raw.trim().equals("[DONE]")) {
+                        if (raw.trim()
+                                .equals("[DONE]")) {
                             close();
                             return false;
                         }

@@ -33,8 +33,10 @@ class EventStreamTest {
             assertEquals("custom", event.event());
             assertEquals("task-1", event.id());
             assertEquals("5000", event.retry());
+            // @formatter:off
             assertTrue(event.data().get("new_field").isNull());
             assertTrue(event.data().at("/nested/future").asBoolean());
+            // @formatter:on
             assertFalse(stream.hasNext());
             assertTrue(source.closed);
         }

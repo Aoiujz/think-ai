@@ -26,16 +26,20 @@ class ContractTest {
 
     @BeforeAll
     static void start() throws Exception {
-        root = Path.of("").toAbsolutePath();
+        root = Path.of("")
+                .toAbsolutePath();
         while (root != null && !Files.exists(root.resolve("tests/contracts/server.mjs"))) {
             root = root.getParent();
         }
         assertNotNull(root, "找不到共享离线协议服务");
+        // @formatter:off
         var builder = new ProcessBuilder("node", root.resolve("tests/contracts/server.mjs").toString());
-        builder.environment().put("PORT", "0");
+        builder.environment()
+                .put("PORT", "0");
         server = builder.start();
         String line = new BufferedReader(new InputStreamReader(server.getInputStream(), StandardCharsets.UTF_8)).readLine();
         endpoint = URI.create(JSON.readTree(line).path("endpoint").asText());
+        // @formatter:on
     }
 
     @AfterAll
@@ -46,7 +50,11 @@ class ContractTest {
     }
 
     static ThinkAIClient client() {
-        return ThinkAIClient.builder("offline-token").endpoint(endpoint).timeout(Duration.ofSeconds(5)).pollInterval(Duration.ofMillis(2)).build();
+        return ThinkAIClient.builder("offline-token")
+                .endpoint(endpoint)
+                .timeout(Duration.ofSeconds(5))
+                .pollInterval(Duration.ofMillis(2))
+                .build();
     }
 
     static Map<String, Object> params(String mode) {
@@ -62,7 +70,9 @@ class ContractTest {
         if (post) {
             request.POST(HttpRequest.BodyPublishers.noBody());
         }
+        // @formatter:off
         return JSON.readTree(HttpClient.newHttpClient().send(request.build(), HttpResponse.BodyHandlers.ofString()).body());
+        // @formatter:on
     }
 
     static List<EventStream.Event> events(ApiResult result) {
@@ -95,27 +105,38 @@ class ContractTest {
             };
         }
         if (resource.equals("model") && operation.equals("show")) {
-            return client.model().show("chat", "code");
+            return client.model()
+                    .show("chat", "code");
         }
         if (resource.equals("skill") && operation.equals("categories")) {
-            return client.skill().categories();
+            return client.skill()
+                    .categories();
         }
         if (resource.equals("skill") && operation.equals("download")) {
-            return client.skill().download("folder/文 件&x.bin");
+            return client.skill()
+                    .download("folder/文 件&x.bin");
         }
-        var target = ThinkAIClient.class.getMethod(resource).invoke(client);
-        return (ApiResult) target.getClass().getMethod(operation, Map.class).invoke(target, params(null));
+        var target = ThinkAIClient.class.getMethod(resource)
+                .invoke(client);
+        return (ApiResult) target.getClass()
+                .getMethod(operation, Map.class)
+                .invoke(target, params(null));
     }
 
     @Test
     void all37SharedOperationsSendCorrectRoutesAndPayloads() throws Exception {
         control("__reset", true);
+        // @formatter:off
         var manifest = JSON.readTree(root.resolve("tests/contracts/operations.json").toFile());
+        // @formatter:on
         assertEquals(37, manifest.size());
         try (var client = client()) {
             int count = 0;
             for (JsonNode entry : manifest) {
-                String resource = entry.path("resource").asText(), operation = entry.path("operation").asText();
+                String resource = entry.path("resource")
+                        .asText(), operation = entry.path("operation")
+                                .asText();
+                // @formatter:off
                 try (var result = invoke(client, resource, operation)) {
                     if (result instanceof ApiResult.Events) {
                         assertFalse(events(result).isEmpty());
@@ -128,14 +149,16 @@ class ContractTest {
                 assertEquals(entry.path("http_method").asText(), captured.path("method").asText());
                 assertEquals("/" + entry.path("path").asText().replace("{id}", "box").replace("{type}", "chat").replace("{code}", "code"), captured.path("path").asText());
                 assertEquals("Bearer offline-token", captured.path("authorization").asText());
-                if (captured.path("body").has("custom")) {
+                if (captured.path("body")
+                        .has("custom")) {
                     assertEquals(JSON.valueToTree(params(null).get("custom")), captured.path("body").get("custom"));
                 }
                 if (operation.equals("runCode")) {
                     assertEquals("https://example.test/a", captured.at("/body/files/0/url").asText());
                 }
                 if (operation.equals("uploadFile")) {
-                    byte[] raw = Base64.getDecoder().decode(captured.path("raw_base64").asText());
+                    byte[] raw = Base64.getDecoder()
+                            .decode(captured.path("raw_base64").asText());
                     String multipart = new String(raw, StandardCharsets.UTF_8);
                     assertTrue(multipart.contains("name=\"path\""));
                     assertTrue(multipart.contains("name=\"file\""));
@@ -148,6 +171,7 @@ class ContractTest {
                     }
                     assertTrue(found);
                 }
+                // @formatter:on
             }
             assertEquals(37, control("__requests", false).size());
         }
@@ -158,41 +182,52 @@ class ContractTest {
         try (var client = client()) {
             var p = params("json");
             p.remove("stream");
-            try (var result = client.chat().completions(p)) {
+            // @formatter:off
+            try (var result = client.chat()
+                    .completions(p)) {
                 assertInstanceOf(ApiResult.Json.class, result);
                 assertTrue(result.json().at("/body/stream").asBoolean());
                 assertFalse(p.containsKey("stream"));
             }
-            try (var result = client.chat().completions(params(null))) {
+            try (var result = client.chat()
+                    .completions(params(null))) {
                 assertInstanceOf(ApiResult.Json.class, result);
             }
-            try (var result = client.chat().completions(Map.of("model", "offline"))) {
+            try (var result = client.chat()
+                    .completions(Map.of("model", "offline"))) {
                 assertEquals(2, events(result).size());
             }
-            try (var result = client.audio().speech(params("audio-sse"))) {
+            try (var result = client.audio()
+                    .speech(params("audio-sse"))) {
                 assertEquals("AAEC", events(result).get(0).data().at("/audio/data").asText());
             }
-            try (var result = client.sandbox().runCommand("box", "echo hi", true)) {
+            try (var result = client.sandbox()
+                    .runCommand("box", "echo hi", true)) {
                 assertEquals(2, events(result).size());
             }
+            // @formatter:on
         }
     }
 
     @Test
     void fragmentedUtf8AndThinkAiEventErrorsRemainData() {
         try (var client = client()) {
-            try (var result = client.chat().completions(params("fragmented-sse"))) {
+            // @formatter:off
+            try (var result = client.chat()
+                    .completions(params("fragmented-sse"))) {
                 var events = events(result);
                 assertEquals("你好🌍", events.get(0).data().at("/delta/content").asText());
                 assertEquals("message", events.get(0).event());
             }
-            try (var result = client.responses().create(params("responses-error"))) {
+            try (var result = client.responses()
+                    .create(params("responses-error"))) {
                 var events = events(result);
                 assertEquals(4, events.size());
                 assertEquals("Offline event error", events.get(1).data().at("/chunks/error").asText());
                 assertTrue(events.get(2).data().has("stats"));
                 assertTrue(events.get(3).data().has("id"));
             }
+            // @formatter:on
         }
     }
 
@@ -203,23 +238,29 @@ class ContractTest {
         try (var client = client()) {
             var p = params("error");
             p.put("__status", status);
+            // @formatter:off
             var error = assertThrows(ThinkAIException.class, () -> client.images().generations(p));
             assertEquals(status, error.statusCode());
             assertTrue(error.rawBody().contains("Offline fixture error"));
             assertEquals(1, control("__requests", false).size());
+            // @formatter:on
         }
     }
 
     @Test
     void invalidJsonSseAndDisconnectedStreamFailVisibly() {
         try (var client = client()) {
+            // @formatter:off
             var error = assertThrows(ThinkAIException.class, () -> client.images().generations(params("invalid-json")));
             assertEquals("{invalid", error.rawBody());
             assertNotNull(error.getCause());
-            try (var result = client.responses().create(params("invalid-sse"))) {
+            // @formatter:on
+            try (var result = client.responses()
+                    .create(params("invalid-sse"))) {
                 assertThrows(ThinkAIException.class, () -> events(result));
             }
-            try (var result = client.responses().create(params("disconnect"))) {
+            try (var result = client.responses()
+                    .create(params("disconnect"))) {
                 assertThrows(ThinkAIException.class, () -> events(result));
             }
         }
@@ -229,13 +270,18 @@ class ContractTest {
     void totalTimeoutAndCancellationCoverStreamReading() {
         var slow = params("slow");
         slow.put("__delay_ms", 1000);
-        try (var client = ThinkAIClient.builder("offline-token").endpoint(endpoint).timeout(Duration.ofMillis(150)).build()) {
-            try (var result = client.responses().create(slow)) {
+        try (var client = ThinkAIClient.builder("offline-token")
+                .endpoint(endpoint)
+                .timeout(Duration.ofMillis(150))
+                .build()) {
+            try (var result = client.responses()
+                    .create(slow)) {
                 assertNotNull(assertThrows(ThinkAIException.class, () -> events(result)).getCause());
             }
         }
         try (var client = client(); var cancel = new CancellationToken()) {
-            try (var result = client.responses().create(slow, RequestOptions.withCancellation(cancel))) {
+            try (var result = client.responses()
+                    .create(slow, RequestOptions.withCancellation(cancel))) {
                 cancel.cancel();
                 var error = assertThrows(ThinkAIException.class, () -> events(result));
                 assertInstanceOf(CancellationException.class, error.getCause());
@@ -247,35 +293,49 @@ class ContractTest {
     void avatarUsesOriginalIdReturnsFailAndStopsImmediatelyOnHttpError() throws Exception {
         control("__reset", true);
         try (var client = client()) {
-            try (var result = client.avatar().video(params("wait-success"))) {
+            // @formatter:off
+            try (var result = client.avatar()
+                    .video(params("wait-success"))) {
                 assertEquals("processing", result.json().path("status").asText());
                 assertEquals(1, control("__requests", false).size());
             }
-            try (var result = client.avatar().video(params("wait-success"), true)) {
+            try (var result = client.avatar()
+                    .video(params("wait-success"), true)) {
                 assertEquals("success", result.json().path("status").asText());
             }
-            try (var result = client.avatar().video(params("wait-fail"), true)) {
+            try (var result = client.avatar()
+                    .video(params("wait-fail"), true)) {
                 assertEquals("fail", result.json().path("status").asText());
             }
             assertEquals(403, assertThrows(ThinkAIException.class, () -> client.avatar().video(params("wait-error"), true)).statusCode());
             assertThrows(ThinkAIException.class, () -> client.avatar().video(params("wait-timeout"), true, Duration.ofMillis(40), Duration.ofMillis(2), null));
             for (JsonNode request : control("__requests", false)) {
-                if (request.path("path").asText().equals("/avatar/query")) {
+                if (request.path("path")
+                        .asText()
+                        .equals("/avatar/query")) {
                     assertTrue(request.at("/body/id").asText().startsWith("offline-task-"));
                 }
             }
+            // @formatter:on
         }
     }
 
     @Test
     void endpointPrefixEscapedPathAndNestedPhpStyleQueries() {
         var injected = HttpClient.newHttpClient();
-        try (var client = ThinkAIClient.builder("offline-token").endpoint(endpoint.resolve("prefix")).httpClient(injected).build()) {
-            try (var result = client.model().show("chat", "code/a b")) {
+        // @formatter:off
+        try (var client = ThinkAIClient.builder("offline-token")
+                .endpoint(endpoint.resolve("prefix"))
+                .httpClient(injected)
+                .build()) {
+            try (var result = client.model()
+                    .show("chat", "code/a b")) {
                 assertEquals("/prefix/model/chat/code%2Fa%20b", result.json().path("path").asText());
             }
-            try (var result = client.model().list(ThinkAIClient.object("enabled", false, "tags", List.of("a", "b"), "filter", Map.of("q", "你好"), "skip", null))) {
-                var query = result.json().path("query");
+            try (var result = client.model()
+                    .list(ThinkAIClient.object("enabled", false, "tags", List.of("a", "b"), "filter", Map.of("q", "你好"), "skip", null))) {
+                var query = result.json()
+                        .path("query");
                 assertEquals("0", query.path("enabled").asText());
                 assertEquals("a", query.path("tags[0]").asText());
                 assertEquals("b", query.path("tags[1]").asText());
@@ -284,26 +344,33 @@ class ContractTest {
             }
         }
         assertDoesNotThrow(() -> injected.send(HttpRequest.newBuilder(endpoint.resolve("__health")).build(), HttpResponse.BodyHandlers.ofString()));
+        // @formatter:on
     }
 
     @Test
     void downloadedJsonRetainsExactBytes() throws Exception {
-        try (var client = client(); var result = client.sandbox().downloadFile("box", "fixture.json")) {
+        try (var client = client();
+                var result = client.sandbox()
+                        .downloadFile("box", "fixture.json")) {
             var binary = assertInstanceOf(ApiResult.Binary.class, result);
+            // @formatter:off
             assertEquals("{ \"file\": true }\n", new String(binary.stream().readAllBytes(), StandardCharsets.UTF_8));
+            // @formatter:on
         }
     }
 
     @Test
     void bufferedEventsStillObserveDeadlineAndCancellation() throws Exception {
         try (var client = client(); var cancel = new CancellationToken()) {
-            try (var result = client.responses().create(params(null), new RequestOptions(Duration.ofMillis(150), cancel))) {
+            try (var result = client.responses()
+                    .create(params(null), new RequestOptions(Duration.ofMillis(150), cancel))) {
                 var stream = ((ApiResult.Events) result).stream();
                 assertNotNull(stream.next());
                 Thread.sleep(200);
                 assertThrows(ThinkAIException.class, stream::next);
             }
-            try (var result = client.responses().create(params(null), RequestOptions.withCancellation(cancel))) {
+            try (var result = client.responses()
+                    .create(params(null), RequestOptions.withCancellation(cancel))) {
                 var stream = ((ApiResult.Events) result).stream();
                 assertNotNull(stream.next());
                 cancel.cancel();
@@ -315,19 +382,26 @@ class ContractTest {
     @Test
     void userAgentReportsPublicRuntimeVersion() throws Exception {
         var local = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        // @formatter:off
         local.createContext("/model", exchange -> {
             byte[] bytes = JSON.writeValueAsBytes(Map.of("user_agent", exchange.getRequestHeaders().getFirst("User-Agent")));
-            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.getResponseHeaders()
+                    .set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
             try (var output = exchange.getResponseBody()) {
                 output.write(bytes);
             }
         });
         local.start();
-        try (var client = ThinkAIClient.builder("offline-token").endpoint(URI.create("http://127.0.0.1:" + local.getAddress().getPort() + "/")).build(); var result = client.model().list()) {
+        try (var client = ThinkAIClient.builder("offline-token")
+                .endpoint(URI.create("http://127.0.0.1:" + local.getAddress().getPort() + "/"))
+                .build();
+                var result = client.model()
+                        .list()) {
             assertEquals("ThinkAI-java/" + ThinkAIClient.VERSION, result.json().path("user_agent").asText());
         } finally {
             local.stop(0);
         }
+        // @formatter:on
     }
 }

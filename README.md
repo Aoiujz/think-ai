@@ -43,7 +43,7 @@ CI 为需要 Python 的任务显式安装 Python，并按分支或 PR 对并发�
 
 ### 代码格式
 
-新 SDK 的源码与测试使用语言原生或常用格式工具：Java 使用 Spotless / Eclipse JDT，Python 使用 Ruff，TypeScript / JavaScript 使用 Prettier，C# 使用 dotnet format，Go 使用 gofmt。Java、Python、C# 采用 4 空格缩进，普通函数定义和调用的参数列表保持单行；控制流及非空方法体展开，参数中的对象、回调等代码块保留内部结构。
+新 SDK 的源码与测试使用语言原生或常用格式工具：Java 使用 Spotless / Eclipse JDT，Python 使用 Ruff，TypeScript / JavaScript 使用 Prettier 与 ESLint Stylistic，C# 使用 dotnet format，Go 使用 gofmt。Java、Python、C# 采用 4 空格缩进，普通函数定义和调用的参数列表保持单行，独立的链式调用每个方法单独一行；控制流及非空方法体展开，参数中的对象、回调等代码块保留内部结构。参数内部嵌套的链保留单行，以保持外层普通参数不拆分。
 
 根 `.editorconfig` 提供编辑器默认配置；工具版本、修正命令和 CI 检查范围见 [代码格式指南](docs/FORMATTING.md)。格式工具为开发依赖，CI 仅检查格式。
 

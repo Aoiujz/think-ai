@@ -50,12 +50,14 @@ public sealed class ApiResult : IDisposable, IAsyncDisposable
     {
         if (Events is not null)
         {
-            await Events.DisposeAsync().ConfigureAwait(false);
+            await Events.DisposeAsync()
+                .ConfigureAwait(false);
         }
 
         if (Binary is not null)
         {
-            await Binary.DisposeAsync().ConfigureAwait(false);
+            await Binary.DisposeAsync()
+                .ConfigureAwait(false);
         }
     }
 }
@@ -106,7 +108,8 @@ public sealed class EventStream : IAsyncEnumerable<SseEvent>, IDisposable, IAsyn
                     active.CheckActive(cancellationToken);
                 }
 
-                var line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+                var line = await reader.ReadLineAsync(cancellationToken)
+                    .ConfigureAwait(false);
                 if (line is null)
                 {
                     throw new ThinkAIException("事件流在 [DONE] 前截断。", _status, string.Join("\n", data), new EndOfStreamException());
@@ -180,7 +183,8 @@ public sealed class EventStream : IAsyncEnumerable<SseEvent>, IDisposable, IAsyn
         }
         finally
         {
-            await DisposeAsync().ConfigureAwait(false);
+            await DisposeAsync()
+                .ConfigureAwait(false);
         }
     }
 
@@ -211,10 +215,14 @@ internal sealed class ResponseStream : Stream
     }
 
     public override int Read(byte[] buffer, int offset, int count)
-        => ReadAsync(buffer.AsMemory(offset, count)).AsTask().GetAwaiter().GetResult();
+        => ReadAsync(buffer.AsMemory(offset, count))
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
 
     public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        => ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+        => ReadAsync(buffer.AsMemory(offset, count), cancellationToken)
+            .AsTask();
 
     internal void CheckActive(CancellationToken cancellationToken = default)
     {
@@ -234,7 +242,8 @@ internal sealed class ResponseStream : Stream
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token, cancellationToken);
         try
         {
-            return await _inner.ReadAsync(buffer, linked.Token).ConfigureAwait(false);
+            return await _inner.ReadAsync(buffer, linked.Token)
+                .ConfigureAwait(false);
         }
         catch (OperationCanceledException error) when (
             !_caller.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
