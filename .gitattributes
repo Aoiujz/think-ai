@@ -6,6 +6,7 @@
 *.go text eol=lf
 /java/pom.xml text eol=lf
 /java/xml-format.properties text eol=lf
+/java/eclipse-formatter.xml text eol=lf
 *.csproj text eol=lf
 
 /python export-ignore

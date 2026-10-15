@@ -13,9 +13,7 @@ from thinkai import Client, EventStream
 
 with Client("YOUR_TOKEN", endpoint="https://ai.topthink.com/", timeout=300) as client:
     # Chat 缺省 stream=True；根据实际响应 Content-Type 返回字典或 EventStream。
-    result = client.chat.completions(
-        {"model": "YOUR_CHAT_MODEL", "messages": [{"role": "user", "content": "你好"}]}
-    )
+    result = client.chat.completions({"model": "YOUR_CHAT_MODEL", "messages": [{"role": "user", "content": "你好"}]})
     if isinstance(result, EventStream):
         with result:
             for event in result:
@@ -23,13 +21,7 @@ with Client("YOUR_TOKEN", endpoint="https://ai.topthink.com/", timeout=300) as c
     else:
         print(result)
 
-    result = client.chat.completions(
-        {
-            "model": "YOUR_CHAT_MODEL",
-            "messages": [{"role": "user", "content": "你好"}],
-            "stream": False,
-        }
-    )
+    result = client.chat.completions({"model": "YOUR_CHAT_MODEL", "messages": [{"role": "user", "content": "你好"}], "stream": False})
 ```
 
 异步客户端使用 HTTPX AsyncClient。取消请求或流读取可取消其 asyncio Task；提前结束事件消费时使用 `async with` 或 `await stream.aclose()`。
@@ -40,9 +32,7 @@ from thinkai import AsyncClient, AsyncEventStream
 
 async def main():
     async with AsyncClient("YOUR_TOKEN") as client:
-        result = await client.responses.create(
-            {"model": "YOUR_CHAT_MODEL", "input": "你好"}
-        )
+        result = await client.responses.create({"model": "YOUR_CHAT_MODEL", "input": "你好"})
         if isinstance(result, AsyncEventStream):
             async with result:
                 async for event in result:
@@ -117,7 +107,7 @@ python -m build python
 python python/scripts/check_package.py
 ```
 
-代码格式使用开发依赖中的固定版本 Ruff 0.17.0，统一配置位于 `python/pyproject.toml`，行宽 100，目标 Python 3.11。以下命令在仓库根目录运行，覆盖 Python SDK 和跨目录 Python 开发脚本；只运行 formatter，嵌入的其他语言代码字符串保持原样。
+代码格式使用开发依赖中的固定版本 Ruff 0.17.0，统一配置位于 `python/pyproject.toml`，目标 Python 3.11，行尾 LF。函数签名和普通调用的参数保持单行，控制流和方法体展开；复杂字典、多行字符串等内部结构可继续分行。配置使用行宽 1000，并忽略会强制竖排的末尾逗号；Ruff 支持的行宽范围为 1–65535。以下命令在仓库根目录运行，覆盖 Python SDK 和跨目录 Python 开发脚本；只运行 formatter，嵌入的其他语言代码字符串保持原样。
 
 ```bash
 python -m ruff format --config python/pyproject.toml python java/scripts dotnet/scripts tests/php tests/packaging scripts/central-bundle.py

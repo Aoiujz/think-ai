@@ -1,16 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import {
-  copyFileSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-  realpathSync,
-} from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -27,8 +18,7 @@ const environment = {
 };
 const python = process.env.THINKAI_PYTHON || 'python';
 const digest = (algorithm, bytes) => createHash(algorithm).update(bytes).digest('hex');
-const armored =
-  '-----BEGIN PGP SIGNATURE-----\nFAKE OFFLINE SIGNATURE\n-----END PGP SIGNATURE-----\n';
+const armored = '-----BEGIN PGP SIGNATURE-----\nFAKE OFFLINE SIGNATURE\n-----END PGP SIGNATURE-----\n';
 
 function fixture(t) {
   const base = join(ROOT, '.artifacts/central-tests');
@@ -49,16 +39,8 @@ function fixture(t) {
   mkdirSync(join(root, 'scripts'));
   copyFileSync(join(ROOT, 'scripts/central-bundle.py'), join(root, 'scripts/central-bundle.py'));
   const originals = new Map();
-  const files = [
-    'think-ai-1.2.3.jar',
-    'think-ai-1.2.3-sources.jar',
-    'think-ai-1.2.3-javadoc.jar',
-    'think-ai-1.2.3.pom',
-  ].map((name, index) => {
-    const bytes = Buffer.concat([
-      Buffer.from('accepted ' + name + '\n'),
-      Buffer.from([0, 255, index]),
-    ]);
+  const files = ['think-ai-1.2.3.jar', 'think-ai-1.2.3-sources.jar', 'think-ai-1.2.3-javadoc.jar', 'think-ai-1.2.3.pom'].map((name, index) => {
+    const bytes = Buffer.concat([Buffer.from('accepted ' + name + '\n'), Buffer.from([0, 255, index])]);
     originals.set(name, bytes);
     const path = `.artifacts/releases/java/1.2.3/build-fixture/${name}`;
     writeFileSync(join(root, path), bytes);
@@ -90,10 +72,7 @@ function runner(calls, { failSign = false } = {}) {
     return { status: result.status, stdout: result.stdout, stderr: result.stderr };
   };
 }
-function fakePortal({
-  states = ['PENDING', 'VALIDATING', 'PUBLISHING', 'PUBLISHED'],
-  beforeStatus = () => {},
-} = {}) {
+function fakePortal({ states = ['PENDING', 'VALIDATING', 'PUBLISHING', 'PUBLISHED'], beforeStatus = () => {} } = {}) {
   const calls = [];
   let count = 0;
   const fetch = async (input, options) => {
@@ -102,13 +81,7 @@ function fakePortal({
     assert.equal(url.origin, 'https://central.sonatype.com');
     assert.equal(options.method, 'POST');
     assert.equal(options.redirect, 'error');
-    assert.equal(
-      options.headers.Authorization,
-      'Bearer ' +
-        Buffer.from(
-          environment.CENTRAL_TOKEN_USERNAME + ':' + environment.CENTRAL_TOKEN_PASSWORD,
-        ).toString('base64'),
-    );
+    assert.equal(options.headers.Authorization, 'Bearer ' + Buffer.from(environment.CENTRAL_TOKEN_USERNAME + ':' + environment.CENTRAL_TOKEN_PASSWORD).toString('base64'));
     if (url.pathname.endsWith('/upload')) {
       assert.equal(url.searchParams.get('publishingType'), 'AUTOMATIC');
       assert.deepEqual([...options.body.keys()], ['bundle']);
@@ -156,15 +129,7 @@ test('accepted four artifacts are signed without secret argv and a real 24-entry
     options.directory,
     readdirSync(options.directory).find((name) => name.startsWith('central-')),
   );
-  const inspect = spawnSync(
-    python,
-    [
-      '-c',
-      'import zipfile,json,base64,sys; z=zipfile.ZipFile(sys.argv[1]); print(json.dumps({n:base64.b64encode(z.read(n)).decode() for n in z.namelist()}))',
-      join(output, 'central-bundle.zip'),
-    ],
-    { encoding: 'utf8', windowsHide: true },
-  );
+  const inspect = spawnSync(python, ['-c', 'import zipfile,json,base64,sys; z=zipfile.ZipFile(sys.argv[1]); print(json.dumps({n:base64.b64encode(z.read(n)).decode() for n in z.namelist()}))', join(output, 'central-bundle.zip')], { encoding: 'utf8', windowsHide: true });
   assert.equal(inspect.status, 0, inspect.stderr);
   const entries = JSON.parse(inspect.stdout);
   assert.equal(Object.keys(entries).length, 24);
@@ -173,11 +138,9 @@ test('accepted four artifacts are signed without secret argv and a real 24-entry
     assert.deepEqual(Buffer.from(entries[path], 'base64'), bytes);
     assert.deepEqual(readFileSync(join(options.directory, name)), bytes);
     assert.equal(Buffer.from(entries[path + '.asc'], 'base64').toString(), armored);
-    for (const algorithm of ['md5', 'sha1', 'sha256', 'sha512'])
-      assert.equal(
-        Buffer.from(entries[path + '.' + algorithm], 'base64').toString(),
-        digest(algorithm, bytes),
-      );
+    for (const algorithm of ['md5', 'sha1', 'sha256', 'sha512']) {
+      assert.equal(Buffer.from(entries[path + '.' + algorithm], 'base64').toString(), digest(algorithm, bytes));
+    }
   }
 });
 
@@ -199,10 +162,7 @@ test('agent signing has no passphrase-fd/stdin, and upload receipt precedes FAIL
         uploaded = true;
       },
     }),
-    (error) =>
-      error.deploymentId === ID &&
-      error.deploymentState === 'FAILED' &&
-      /invalid signature/.test(error.message),
+    (error) => error.deploymentId === ID && error.deploymentState === 'FAILED' && /invalid signature/.test(error.message),
   );
   assert.equal(uploaded, true);
   assert.equal(portal.calls.length, 2);
@@ -259,9 +219,7 @@ test('signing failure redacts sensitive stderr and never invokes bundle or uploa
       run: runner(commands, { failSign: true }),
       fetch: () => assert.fail('must not upload'),
     }),
-    (error) =>
-      /GPG signing failed/.test(error.message) &&
-      !error.message.includes(environment.MAVEN_GPG_PASSPHRASE),
+    (error) => /GPG signing failed/.test(error.message) && !error.message.includes(environment.MAVEN_GPG_PASSPHRASE),
   );
   assert.equal(commands.length, 1);
 });
@@ -292,10 +250,7 @@ test('bundle helper rejects a changed staged artifact and upload is not attempte
     }
     return originalRunner(command, args, settings);
   };
-  await assert.rejects(
-    publishCentral({ ...options, run, fetch: () => assert.fail('must not upload') }),
-    /bundle construction failed/,
-  );
+  await assert.rejects(publishCentral({ ...options, run, fetch: () => assert.fail('must not upload') }), /bundle construction failed/);
 });
 
 test('HTTP upload/status errors do not retry and never expose credential values', async (t) => {
@@ -313,8 +268,7 @@ test('HTTP upload/status errors do not retry and never expose credential values'
         return new Response(environment.CENTRAL_TOKEN_PASSWORD, { status: 401 });
       },
     }),
-    (error) =>
-      /HTTP 401/.test(error.message) && !error.message.includes(environment.CENTRAL_TOKEN_PASSWORD),
+    (error) => /HTTP 401/.test(error.message) && !error.message.includes(environment.CENTRAL_TOKEN_PASSWORD),
   );
   assert.equal(calls, 1);
   await assert.rejects(
@@ -323,8 +277,7 @@ test('HTTP upload/status errors do not retry and never expose credential values'
       environment,
       fetch: async () => new Response(environment.MAVEN_GPG_PASSPHRASE, { status: 500 }),
     }),
-    (error) =>
-      error.deploymentId === ID && !error.message.includes(environment.MAVEN_GPG_PASSPHRASE),
+    (error) => error.deploymentId === ID && !error.message.includes(environment.MAVEN_GPG_PASSPHRASE),
   );
 });
 

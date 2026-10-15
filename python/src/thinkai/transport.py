@@ -249,9 +249,7 @@ class AsyncEventStream(AsyncBinaryStream):
             await self.aclose()
 
 
-def request(
-    client: httpx.Client, timeout: float, method: str, url: str, *, force_binary=False, **kwargs
-):
+def request(client: httpx.Client, timeout: float, method: str, url: str, *, force_binary=False, **kwargs):
     guard = _Guard(timeout)
     response = None
     retained = False
@@ -292,15 +290,7 @@ def request(
                 response.close()
 
 
-async def async_request(
-    client: httpx.AsyncClient,
-    timeout: float,
-    method: str,
-    url: str,
-    *,
-    force_binary=False,
-    **kwargs,
-):
+async def async_request(client: httpx.AsyncClient, timeout: float, method: str, url: str, *, force_binary=False, **kwargs):
     deadline = asyncio.get_running_loop().time() + timeout
     response = None
     retained = False

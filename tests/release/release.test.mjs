@@ -1,60 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import {
-  mkdtempSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-  copyFileSync,
-  rmSync,
-  statSync,
-  existsSync,
-} from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, rmSync, statSync, existsSync } from 'node:fs';
 import { join, dirname, resolve, sep } from 'node:path';
 import childProcess, { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
-import {
-  ROOT,
-  SDKS,
-  versionInfo,
-  prepare,
-  tagFor,
-  stableVersion,
-  expectedArtifacts,
-  validateManifest,
-  publishPreview,
-  publish,
-  verifyPublished,
-  registryCommand,
-  parseRemoteRefs,
-  tagState,
-  composerCommand,
-  gitState,
-  main,
-} from '../../scripts/release.mjs';
+import { ROOT, SDKS, versionInfo, prepare, tagFor, stableVersion, expectedArtifacts, validateManifest, publishPreview, publish, verifyPublished, registryCommand, parseRemoteRefs, tagState, composerCommand, gitState, main } from '../../scripts/release.mjs';
 
-const SOURCE_FILES = [
-  'composer.json',
-  'php/VERSION',
-  'python/pyproject.toml',
-  'python/src/thinkai/_version.py',
-  'python/README.md',
-  'typescript/package.json',
-  'typescript/package-lock.json',
-  'typescript/src/version.ts',
-  'typescript/README.md',
-  'go/client.go',
-  'go/go.mod',
-  'go/README.md',
-  'java/pom.xml',
-  'java/src/main/java/com/topthink/ai/ThinkAIClient.java',
-  'java/README.md',
-  'dotnet/TopThink.ThinkAI/TopThink.ThinkAI.csproj',
-  'dotnet/TopThink.ThinkAI/ThinkAIClient.cs',
-  'dotnet/README.md',
-];
+const SOURCE_FILES = ['composer.json', 'php/VERSION', 'python/pyproject.toml', 'python/src/thinkai/_version.py', 'python/README.md', 'typescript/package.json', 'typescript/package-lock.json', 'typescript/src/version.ts', 'typescript/README.md', 'go/client.go', 'go/go.mod', 'go/README.md', 'java/pom.xml', 'java/src/main/java/com/topthink/ai/ThinkAIClient.java', 'java/README.md', 'dotnet/TopThink.ThinkAI/TopThink.ThinkAI.csproj', 'dotnet/TopThink.ThinkAI/ThinkAIClient.cs', 'dotnet/README.md'];
 const COMMIT = 'a'.repeat(40),
   OTHER = 'b'.repeat(40);
 const hash = (value) => createHash('sha256').update(value).digest('hex');
@@ -80,18 +34,7 @@ function fixture(t, git = false) {
     run(['init', '--quiet']);
     run(['config', 'core.autocrlf', 'false']);
     run(['add', '.']);
-    run([
-      '-c',
-      'user.name=ThinkAI Offline Tests',
-      '-c',
-      'user.email=offline@example.invalid',
-      '-c',
-      'commit.gpgsign=false',
-      'commit',
-      '--quiet',
-      '-m',
-      'fixture',
-    ]);
+    run(['-c', 'user.name=ThinkAI Offline Tests', '-c', 'user.email=offline@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '--quiet', '-m', 'fixture']);
   }
   return root;
 }
@@ -115,13 +58,7 @@ function manifest(root, sdk, overrides = {}) {
   return result;
 }
 function releaseReceiptPath(root, sdk) {
-  return join(
-    root,
-    '.artifacts/releases',
-    sdk,
-    versionInfo(root, sdk).version,
-    'publish-result.json',
-  );
+  return join(root, '.artifacts/releases', sdk, versionInfo(root, sdk).version, 'publish-result.json');
 }
 function publisher(root, sdk, options = {}) {
   const info = versionInfo(root, sdk),
@@ -130,22 +67,20 @@ function publisher(root, sdk, options = {}) {
     gitState: () => ({ commit: COMMIT, dirty: false, branch: 'master', ...options.state }),
     git: (_root, args) => {
       if (args[0] === 'remote') return { stdout: 'git@github.com:top-think/think-ai.git\n' };
-      if (args[0] === 'ls-remote')
+      if (args[0] === 'ls-remote') {
         return {
-          stdout:
-            `${options.remoteHead || COMMIT}\trefs/heads/master\n` +
-            (options.remoteTag
-              ? `${OTHER}\trefs/tags/${info.tag}\n${options.remoteTag}\trefs/tags/${info.tag}^{}\n`
-              : ''),
+          stdout: `${options.remoteHead || COMMIT}\trefs/heads/master\n` + (options.remoteTag ? `${OTHER}\trefs/tags/${info.tag}\n${options.remoteTag}\trefs/tags/${info.tag}^{}\n` : ''),
         };
+      }
       if (args[0] === 'rev-parse') return { stdout: options.localTag || '' };
       throw new Error('Unexpected Git read: ' + args);
     },
     run: (command, args, execution) => {
       calls.push({ command, args });
       if (args.includes('--version')) return { stdout: options.dotnetVersion || '10.0.301\n' };
-      if (options.failUpload && args.includes('upload'))
+      if (options.failUpload && args.includes('upload')) {
         throw new Error('Offline upload fixture failed');
+      }
       if (options.assertEnvironment) options.assertEnvironment(execution?.env);
       return { stdout: '', status: 0 };
     },
@@ -157,15 +92,21 @@ async function withEnvironment(changes, callback) {
   const before = {};
   for (const [key, value] of Object.entries(changes)) {
     before[key] = process.env[key];
-    if (value === undefined) delete process.env[key];
-    else process.env[key] = value;
+    if (value === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = value;
+    }
   }
   try {
     return await callback();
   } finally {
     for (const [key, value] of Object.entries(before)) {
-      if (value === undefined) delete process.env[key];
-      else process.env[key] = value;
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
     }
   }
 }
@@ -177,14 +118,8 @@ test('Composer resolves Windows PHAR installations without executing a batch she
   const phar = join(bin, 'composer.phar');
   writeFileSync(phar, 'offline placeholder');
   assert.deepEqual(composerCommand(root, { PATH: '"' + bin + '"' }, 'win32'), ['php', [phar]]);
-  assert.deepEqual(composerCommand(root, { THINKAI_COMPOSER_PHAR: phar }, 'win32'), [
-    'php',
-    [phar],
-  ]);
-  assert.throws(
-    () => composerCommand(root, { THINKAI_COMPOSER_PHAR: phar + '-missing' }, 'win32'),
-    /existing composer.phar/,
-  );
+  assert.deepEqual(composerCommand(root, { THINKAI_COMPOSER_PHAR: phar }, 'win32'), ['php', [phar]]);
+  assert.throws(() => composerCommand(root, { THINKAI_COMPOSER_PHAR: phar + '-missing' }, 'win32'), /existing composer.phar/);
   assert.throws(() => composerCommand(root, {}, 'win32'), /THINKAI_COMPOSER_PHAR/);
   assert.deepEqual(composerCommand(root, {}, 'linux'), ['composer', []]);
 });
@@ -199,30 +134,31 @@ for (const sdk of SDKS) {
     for (const [file, bytes] of before) assert.deepEqual(readFileSync(join(root, file)), bytes);
     prepare(root, sdk, '1.2.3', true);
     assert.equal(versionInfo(root, sdk).version, '1.2.3');
-    for (const other of SDKS.filter((value) => value !== sdk))
+    for (const other of SDKS.filter((value) => value !== sdk)) {
       assert.equal(versionInfo(root, other).version, versionInfo(ROOT, other).version);
-    for (const file of SOURCE_FILES.filter((file) => !plan.files.includes(file)))
+    }
+    for (const file of SOURCE_FILES.filter((file) => !plan.files.includes(file))) {
       assert.deepEqual(readFileSync(join(root, file)), before.get(file));
+    }
     if (sdk === 'typescript') {
       const lock = JSON.parse(readFileSync(join(root, 'typescript/package-lock.json')));
       assert.equal(lock.version, '1.2.3');
       assert.equal(lock.packages[''].version, '1.2.3');
     }
-    if (sdk === 'java')
-      assert.ok(
-        readFileSync(join(root, 'java/pom.xml'), 'utf8').includes(
-          '<jackson.version>2.20.1</jackson.version>',
-        ),
-      );
-    if (sdk === 'php')
+    if (sdk === 'java') {
+      assert.ok(readFileSync(join(root, 'java/pom.xml'), 'utf8').includes('<jackson.version>2.20.1</jackson.version>'));
+    }
+    if (sdk === 'php') {
       assert.equal(JSON.parse(readFileSync(join(root, 'composer.json'))).version, undefined);
+    }
   });
 }
 test('reject invalid/prerelease versions and Go v2 without changing files', (t) => {
   const root = fixture(t),
     before = readFileSync(join(root, 'go/client.go'));
-  for (const value of ['v1.0.0', '01.0.0', '../1.0.0', '1.0.0-rc.1', '1.0', '1.0.0\n'])
+  for (const value of ['v1.0.0', '01.0.0', '../1.0.0', '1.0.0-rc.1', '1.0', '1.0.0\n']) {
     assert.throws(() => stableVersion(value));
+  }
   assert.throws(() => prepare(root, 'go', '2.0.0', true), /module-path/);
   assert.deepEqual(readFileSync(join(root, 'go/client.go')), before);
 });
@@ -257,7 +193,7 @@ test('publish preview is read-only, performs no fetch and prints no credential v
   assert.equal(statSync(join(root, '.git/index')).mtimeMs, mtime);
   assert.ok(!existsSync(join(root, '.artifacts')));
 });
-for (const sdk of SDKS)
+for (const sdk of SDKS) {
   test(`manifest ${sdk}: validates exact version artifact set and SHA256`, (t) => {
     const root = fixture(t),
       info = versionInfo(root, sdk),
@@ -272,6 +208,7 @@ for (const sdk of SDKS)
       assert.throws(() => validateManifest(root, info, state), /stale/);
     }
   });
+}
 test('manifest rejects wrong commit, dirty build and escaped artifact paths', (t) => {
   const root = fixture(t),
     info = versionInfo(root, 'python');
@@ -281,19 +218,14 @@ test('manifest rejects wrong commit, dirty build and escaped artifact paths', (t
   assert.throws(() => validateManifest(root, info, { commit: COMMIT }), /stale/);
   const result = manifest(root, 'python');
   result.files[0].path = '../' + basenameForTest(result.files[0].path);
-  writeFileSync(
-    join(root, '.artifacts/releases/python', info.version, 'manifest.json'),
-    JSON.stringify(result),
-  );
+  writeFileSync(join(root, '.artifacts/releases/python', info.version, 'manifest.json'), JSON.stringify(result));
   assert.throws(() => validateManifest(root, info, { commit: COMMIT }), /inside/);
 });
 function basenameForTest(path) {
   return path.split('/').at(-1);
 }
 test('annotated tags compare peeled commit and same-commit remote tags are reused', () => {
-  const refs = parseRemoteRefs(
-    `${OTHER}\trefs/tags/go/v0.1.0\n${COMMIT}\trefs/tags/go/v0.1.0^{}\n`,
-  );
+  const refs = parseRemoteRefs(`${OTHER}\trefs/tags/go/v0.1.0\n${COMMIT}\trefs/tags/go/v0.1.0^{}\n`);
   assert.deepEqual(tagState(refs, 'go/v0.1.0', COMMIT, COMMIT), {
     remoteExists: true,
     localExists: true,
@@ -327,12 +259,7 @@ test('unpublished branch HEAD blocks before tag or upload', async (t) => {
   await withEnvironment({ TWINE_PASSWORD: 'offline-token' }, async () => {
     await assert.rejects(publish(root, 'python', true, deps), /Push the current branch/);
   });
-  assert.ok(
-    !calls.some(
-      (call) =>
-        call.args.includes('tag') || call.args.includes('push') || call.args.includes('upload'),
-    ),
-  );
+  assert.ok(!calls.some((call) => call.args.includes('tag') || call.args.includes('push') || call.args.includes('upload')));
 });
 test('a new release pushes only its exact tag, then exact artifacts, without secret argv', async (t) => {
   const root = fixture(t);
@@ -343,16 +270,7 @@ test('a new release pushes only its exact tag, then exact artifacts, without sec
     assert.ok(!JSON.stringify(calls).includes('offline-secret'));
   });
   assert.ok(calls.some((call) => call.command === 'git' && call.args[0] === 'tag'));
-  assert.deepEqual(
-    calls.find((call) => call.command === 'git' && call.args.includes('push')).args,
-    [
-      '-c',
-      'push.followTags=false',
-      'push',
-      'git@github.com:top-think/think-ai.git',
-      'refs/tags/' + tagFor('python', versionInfo(root, 'python').version),
-    ],
-  );
+  assert.deepEqual(calls.find((call) => call.command === 'git' && call.args.includes('push')).args, ['-c', 'push.followTags=false', 'push', 'git@github.com:top-think/think-ai.git', 'refs/tags/' + tagFor('python', versionInfo(root, 'python').version)]);
   const upload = calls.find((call) => call.args.includes('upload'));
   assert.ok(upload);
   assert.ok(!upload.args.some((arg) => arg.includes('*')));
@@ -423,9 +341,7 @@ test('Java passes accepted artifacts to Central, saves deployment before polling
       };
       await assert.rejects(publish(root, 'java', true, first.deps), /Offline polling interruption/);
       assert.equal(JSON.parse(readFileSync(receiptPath)).stage, 'central-uploaded');
-      assert.ok(
-        !first.calls.some((call) => call.args.includes('deploy') || call.args.includes('verify')),
-      );
+      assert.ok(!first.calls.some((call) => call.args.includes('deploy') || call.args.includes('verify')));
       assert.ok(!JSON.stringify(first.calls).includes('offline-password'));
       const resumed = publisher(root, 'java', { remoteTag: COMMIT });
       resumed.deps.publishCentral = async (options) => {
@@ -433,18 +349,12 @@ test('Java passes accepted artifacts to Central, saves deployment before polling
         assert.deepEqual(options.manifest, accepted);
         return { deploymentId: id, deploymentState: 'PUBLISHED' };
       };
-      const result = await withEnvironment(
-        { GPG_KEY_ID: undefined, MAVEN_GPG_PASSPHRASE: undefined },
-        () => publish(root, 'java', true, resumed.deps),
-      );
+      const result = await withEnvironment({ GPG_KEY_ID: undefined, MAVEN_GPG_PASSPHRASE: undefined }, () => publish(root, 'java', true, resumed.deps));
       assert.equal(result.stage, 'published');
       assert.equal(result.deployment_id, id);
       assert.ok(!resumed.calls.some((call) => call.command === 'git'));
       assert.ok(!resumed.calls.some((call) => call.command === 'gpg'));
-      await assert.rejects(
-        publish(root, 'java', true, resumed.deps),
-        /already recorded as published/,
-      );
+      await assert.rejects(publish(root, 'java', true, resumed.deps), /already recorded as published/);
     },
   );
 });
@@ -454,10 +364,7 @@ test('Java resume preview requires tokens and shows only the Central status oper
     state = gitState(root);
   const accepted = manifest(root, 'java', { commit: state.commit });
   const id = '28570f16-da32-4c14-bd2e-c1acc0782365';
-  writeFileSync(
-    releaseReceiptPath(root, 'java'),
-    JSON.stringify({ ...accepted, deployment_id: id, stage: 'central-uploaded' }),
-  );
+  writeFileSync(releaseReceiptPath(root, 'java'), JSON.stringify({ ...accepted, deployment_id: id, stage: 'central-uploaded' }));
   await withEnvironment(
     {
       CENTRAL_TOKEN_USERNAME: 'offline-name',
@@ -481,16 +388,13 @@ test('source changed during preflight prevents the first tag or receipt write', 
   let reads = 0;
   deps.gitState = () => ({ commit: COMMIT, branch: 'master', dirty: ++reads > 1 });
   await withEnvironment({ TWINE_PASSWORD: 'offline-token' }, async () => {
-    await assert.rejects(
-      publish(root, 'python', true, deps),
-      /Source changed during release preflight/,
-    );
+    await assert.rejects(publish(root, 'python', true, deps), /Source changed during release preflight/);
   });
   assert.ok(!calls.some((call) => call.command === 'git' || call.args.includes('upload')));
   assert.ok(!existsSync(releaseReceiptPath(root, 'python')));
 });
 
-for (const sdk of ['php', 'go'])
+for (const sdk of ['php', 'go']) {
   test(`${sdk} explicit manual publish pushes only its exact tag and then verifies its index`, async (t) => {
     const root = fixture(t),
       info = versionInfo(root, sdk);
@@ -502,10 +406,7 @@ for (const sdk of ['php', 'go'])
       assert.equal(selected, sdk);
       verified++;
       assert.equal(JSON.parse(readFileSync(releaseReceiptPath(root, sdk))).stage, 'index-pending');
-      assert.equal(
-        calls.filter((call) => call.command === 'git' && call.args.includes('push')).length,
-        1,
-      );
+      assert.equal(calls.filter((call) => call.command === 'git' && call.args.includes('push')).length, 1);
       return { indexed: true };
     };
     assert.equal((await publish(root, sdk, true, deps)).stage, 'published');
@@ -517,16 +418,11 @@ for (const sdk of ['php', 'go'])
     });
     assert.deepEqual(calls[1], {
       command: 'git',
-      args: [
-        '-c',
-        'push.followTags=false',
-        'push',
-        'git@github.com:top-think/think-ai.git',
-        'refs/tags/' + info.tag,
-      ],
+      args: ['-c', 'push.followTags=false', 'push', 'git@github.com:top-think/think-ai.git', 'refs/tags/' + info.tag],
     });
   });
-for (const sdk of ['php', 'go'])
+}
+for (const sdk of ['php', 'go']) {
   test(`${sdk} same-HEAD remote tag is reused for index verification without another tag push`, async (t) => {
     const root = fixture(t);
     manifest(root, sdk);
@@ -540,6 +436,7 @@ for (const sdk of ['php', 'go'])
     assert.equal(verified, 1);
     assert.deepEqual(calls, []);
   });
+}
 test('PHP and Go index failures remain pending until verification succeeds', async (t) => {
   for (const sdk of ['php', 'go']) {
     const root = fixture(t);
@@ -560,7 +457,7 @@ test('PHP and Go index failures remain pending until verification succeeds', asy
   }
 });
 test('PHP/Go manual publishing still requires a clean tree, matching pushed HEAD and manifest', async (t) => {
-  for (const sdk of ['php', 'go'])
+  for (const sdk of ['php', 'go']) {
     for (const scenario of ['dirty', 'unpushed HEAD', 'missing manifest']) {
       const root = fixture(t);
       if (scenario !== 'missing manifest') manifest(root, sdk);
@@ -568,18 +465,14 @@ test('PHP/Go manual publishing still requires a clean tree, matching pushed HEAD
         state: { dirty: scenario === 'dirty' },
         ...(scenario === 'unpushed HEAD' ? { remoteHead: OTHER } : {}),
       });
-      const expected =
-        scenario === 'dirty'
-          ? /Commit all changes/
-          : scenario === 'unpushed HEAD'
-            ? /Push the current branch/
-            : /Build first/;
+      const expected = scenario === 'dirty' ? /Commit all changes/ : scenario === 'unpushed HEAD' ? /Push the current branch/ : /Build first/;
       await assert.rejects(publish(root, sdk, true, deps), expected);
       assert.deepEqual(calls, []);
       assert.ok(!existsSync(releaseReceiptPath(root, sdk)));
     }
+  }
 });
-for (const sdk of ['php', 'go'])
+for (const sdk of ['php', 'go']) {
   test(`${sdk} verify remains available and makes only read-only index checks`, async (t) => {
     const root = fixture(t),
       info = versionInfo(root, sdk),
@@ -593,8 +486,9 @@ for (const sdk of ['php', 'go'])
     t.mock.method(childProcess, 'spawnSync', (command, args) => {
       calls.push({ command, args });
       assert.equal(command, 'git');
-      if (args[1] === 'remote')
+      if (args[1] === 'remote') {
         return { status: 0, stdout: 'git@github.com:top-think/think-ai.git\n' };
+      }
       assert.equal(args[1], 'ls-remote');
       return { status: 0, stdout: `${COMMIT}\trefs/tags/${info.tag}\n` };
     });
@@ -607,18 +501,12 @@ for (const sdk of ['php', 'go'])
     t.mock.method(globalThis, 'fetch', async (url, options) => {
       calls.push({ url });
       assert.ok(options.signal);
-      const expected =
-        sdk === 'php'
-          ? 'https://repo.packagist.org/p2/topthink/think-ai.json'
-          : `https://proxy.golang.org/${info.package}/@v/v${info.version}.info`;
+      const expected = sdk === 'php' ? 'https://repo.packagist.org/p2/topthink/think-ai.json' : `https://proxy.golang.org/${info.package}/@v/v${info.version}.info`;
       assert.equal(url, expected);
       return {
         ok: true,
         status: 200,
-        json: async () =>
-          sdk === 'php'
-            ? { packages: { [info.package]: [{ version: 'v' + info.version }] } }
-            : { Version: 'v' + info.version },
+        json: async () => (sdk === 'php' ? { packages: { [info.package]: [{ version: 'v' + info.version }] } } : { Version: 'v' + info.version }),
       };
     });
     syncBuiltinESMExports();
@@ -626,6 +514,7 @@ for (const sdk of ['php', 'go'])
     assert.equal(calls.filter((call) => call.url).length, 1);
     assert.equal(calls.filter((call) => call.command === 'git').length, sdk === 'go' ? 2 : 0);
   });
+}
 test('CLI help supports every SDK and PHP/Go default previews show plans without publishing', async (t) => {
   const fixtures = ['php', 'go'].map((sdk) => {
     const root = fixture(t, true),
@@ -661,21 +550,10 @@ test('CLI help supports every SDK and PHP/Go default previews show plans without
     for (const plan of [publishPreview(root, sdk), await publish(root, sdk)]) {
       assert.equal(plan.dry_run, true);
       assert.equal(plan.tag, info.tag);
-      assert.ok(
-        plan.commands.some(
-          (command) => command[0] === 'git' && command[1] === 'tag' && command[3] === info.tag,
-        ),
-      );
+      assert.ok(plan.commands.some((command) => command[0] === 'git' && command[1] === 'tag' && command[3] === info.tag));
       assert.deepEqual(
         plan.commands.find((command) => command.includes('push')),
-        [
-          'git',
-          '-c',
-          'push.followTags=false',
-          'push',
-          '<origin push URL>',
-          'refs/tags/' + info.tag,
-        ],
+        ['git', '-c', 'push.followTags=false', 'push', '<origin push URL>', 'refs/tags/' + info.tag],
       );
     }
     await main(['publish', sdk], root);
@@ -691,14 +569,7 @@ test('CLI help supports every SDK and PHP/Go default previews show plans without
 test('PHP/Go registry commands describe only their exact tag and reject unknown SDKs', () => {
   for (const sdk of ['php', 'go']) {
     const info = versionInfo(ROOT, sdk);
-    assert.deepEqual(registryCommand(info, []), [
-      'git',
-      '-c',
-      'push.followTags=false',
-      'push',
-      '<origin push URL>',
-      'refs/tags/' + info.tag,
-    ]);
+    assert.deepEqual(registryCommand(info, []), ['git', '-c', 'push.followTags=false', 'push', '<origin push URL>', 'refs/tags/' + info.tag]);
   }
   assert.throws(() => registryCommand({ sdk: 'unknown', tag: 'v1.0.0' }, []), /SDK must be one of/);
 });

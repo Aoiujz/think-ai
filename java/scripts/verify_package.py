@@ -18,9 +18,7 @@ def run(args, cwd=SDK, env=None):
 
 
 def main():
-    version = (
-        ET.parse(SDK / "pom.xml").getroot().findtext("{http://maven.apache.org/POM/4.0.0}version")
-    )
+    version = ET.parse(SDK / "pom.xml").getroot().findtext("{http://maven.apache.org/POM/4.0.0}version")
     if not version or not version.strip():
         raise SystemExit("java/pom.xml must declare its own project version.")
     version = version.strip()
@@ -35,11 +33,7 @@ def main():
         candidates = list((SDK / ".tools").glob("jdk-*"))
         if candidates:
             environment["JAVA_HOME"] = str(candidates[0])
-    java = (
-        Path(environment["JAVA_HOME"]) / "bin" / ("java.exe" if os.name == "nt" else "java")
-        if environment.get("JAVA_HOME")
-        else Path(shutil.which("java") or "java")
-    )
+    java = Path(environment["JAVA_HOME"]) / "bin" / ("java.exe" if os.name == "nt" else "java") if environment.get("JAVA_HOME") else Path(shutil.which("java") or "java")
     repository = SDK / ".repository"
     common = [maven, "-B", "-q", f"-Dmaven.repo.local={repository}"]
     run([*common, "-DskipTests", "install"], env=environment)
@@ -89,40 +83,14 @@ public class Consumer {
         encoding="utf-8",
     )
     classpath_file = consumer / "classpath.txt"
-    run(
-        [
-            *common,
-            "-f",
-            consumer / "pom.xml",
-            "package",
-            "org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath",
-            f"-Dmdep.outputFile={classpath_file}",
-        ],
-        cwd=consumer,
-        env=environment,
-    )
-    node = subprocess.Popen(
-        ["node", str(ROOT / "tests/contracts/server.mjs")],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        env={**environment, "PORT": "0"},
-        creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-    )
+    run([*common, "-f", consumer / "pom.xml", "package", "org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath", f"-Dmdep.outputFile={classpath_file}"], cwd=consumer, env=environment)
+    node = subprocess.Popen(["node", str(ROOT / "tests/contracts/server.mjs")], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env={**environment, "PORT": "0"}, creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
     try:
         endpoint = json.loads(node.stdout.readline())["endpoint"]
         command = [java]
         if environment.get("THINKAI_JAVA_SOCKET_DIR"):
             command.append("-Djdk.net.unixdomain.tmpdir=" + environment["THINKAI_JAVA_SOCKET_DIR"])
-        command += [
-            "-cp",
-            str(consumer / "target/classes")
-            + os.pathsep
-            + classpath_file.read_text(encoding="utf-8").strip(),
-            "Consumer",
-            endpoint,
-            version,
-        ]
+        command += ["-cp", str(consumer / "target/classes") + os.pathsep + classpath_file.read_text(encoding="utf-8").strip(), "Consumer", endpoint, version]
         run(command, cwd=consumer, env=environment)
     finally:
         node.terminate()

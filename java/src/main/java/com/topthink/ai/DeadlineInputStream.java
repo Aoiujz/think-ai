@@ -6,53 +6,37 @@ import java.io.InputStream;
 import java.util.concurrent.*;
 
 final class DeadlineInputStream extends FilterInputStream {
-    private static final ScheduledExecutorService TIMER =
-            Executors.newSingleThreadScheduledExecutor(
-                    task -> {
-                        var thread = new Thread(task, "thinkai-deadlines");
-                        thread.setDaemon(true);
-                        return thread;
-                    });
+    private static final ScheduledExecutorService TIMER = Executors.newSingleThreadScheduledExecutor(task -> {
+        var thread = new Thread(task, "thinkai-deadlines");
+        thread.setDaemon(true);
+        return thread;
+    });
     private final int status;
     private volatile boolean timedOut, cancelled;
     private final ScheduledFuture<?> timer;
     private final CancellationToken.Registration cancellation, shutdown;
 
-    DeadlineInputStream(
-            InputStream stream,
-            int status,
-            long remainingNanos,
-            CancellationToken token,
-            CancellationToken clientClosed) {
+    DeadlineInputStream(InputStream stream, int status, long remainingNanos, CancellationToken token, CancellationToken clientClosed) {
         super(stream);
         this.status = status;
-        cancellation =
-                token.register(
-                        () -> {
-                            cancelled = true;
-                            closeQuietly();
-                        });
-        shutdown =
-                clientClosed.register(
-                        () -> {
-                            cancelled = true;
-                            closeQuietly();
-                        });
-        timer =
-                TIMER.schedule(
-                        () -> {
-                            timedOut = true;
-                            closeQuietly();
-                        },
-                        Math.max(0, remainingNanos),
-                        TimeUnit.NANOSECONDS);
+        cancellation = token.register(() -> {
+            cancelled = true;
+            closeQuietly();
+        });
+        shutdown = clientClosed.register(() -> {
+            cancelled = true;
+            closeQuietly();
+        });
+        timer = TIMER.schedule(() -> {
+            timedOut = true;
+            closeQuietly();
+        }, Math.max(0, remainingNanos), TimeUnit.NANOSECONDS);
     }
 
     private void closeQuietly() {
         try {
             in.close();
-        } catch (IOException ignored) {
-        }
+        } catch (IOException ignored) {}
     }
 
     void check() {

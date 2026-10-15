@@ -8,23 +8,9 @@ import tomllib
 
 import httpx
 import pytest
-from thinkai import (
-    Client,
-    AsyncClient,
-    APIError,
-    TransportError,
-    ProtocolError,
-    EventStream,
-    AsyncEventStream,
-    BinaryStream,
-    AsyncBinaryStream,
-    OperationTimeout,
-    __version__,
-)
+from thinkai import Client, AsyncClient, APIError, TransportError, ProtocolError, EventStream, AsyncEventStream, BinaryStream, AsyncBinaryStream, OperationTimeout, __version__
 
-MANIFEST = json.loads(
-    (Path(__file__).parents[2] / "tests/contracts/operations.json").read_text(encoding="utf-8")
-)
+MANIFEST = json.loads((Path(__file__).parents[2] / "tests/contracts/operations.json").read_text(encoding="utf-8"))
 
 
 def args(operation):
@@ -37,19 +23,7 @@ def args(operation):
         return ["skill.zip"]
     if resource != "sandbox":
         return [{"model": "fixture-model", "unknown": {"nested": [1, False, None]}}]
-    return {
-        "create": ["test"],
-        "get": ["test"],
-        "delete": ["test"],
-        "listFile": ["test", "/tmp"],
-        "readFile": ["test", "/tmp/a"],
-        "writeFile": ["test", "/tmp/a", "hello"],
-        "editFile": ["test", "/tmp/a", "hello", "world"],
-        "uploadFile": ["test", "/tmp/a", io.BytesIO(b"upload")],
-        "downloadFile": ["test", "/tmp/a"],
-        "runCode": ["test", "print(1)", [{"url": "https://example.test/a", "name": "a.txt"}]],
-        "runCommand": ["test", "pwd"],
-    }[name]
+    return {"create": ["test"], "get": ["test"], "delete": ["test"], "listFile": ["test", "/tmp"], "readFile": ["test", "/tmp/a"], "writeFile": ["test", "/tmp/a", "hello"], "editFile": ["test", "/tmp/a", "hello", "world"], "uploadFile": ["test", "/tmp/a", io.BytesIO(b"upload")], "downloadFile": ["test", "/tmp/a"], "runCode": ["test", "print(1)", [{"url": "https://example.test/a", "name": "a.txt"}]], "runCommand": ["test", "pwd"]}[name]
 
 
 def method(client, operation):
@@ -57,9 +31,7 @@ def method(client, operation):
     return getattr(getattr(client, operation["resource"]), snake)
 
 
-@pytest.mark.parametrize(
-    "operation", MANIFEST, ids=lambda op: op["resource"] + "." + op["operation"]
-)
+@pytest.mark.parametrize("operation", MANIFEST, ids=lambda op: op["resource"] + "." + op["operation"])
 def test_all_sync_routes(endpoint, operation):
     with Client("offline-token", endpoint=endpoint + "prefix/") as client:
         result = method(client, operation)(*args(operation))
@@ -68,12 +40,7 @@ def test_all_sync_routes(endpoint, operation):
         elif isinstance(result, BinaryStream):
             assert result.read()
     entry = httpx.get(endpoint + "__requests").json()[-1]
-    expected = (
-        operation["path"]
-        .replace("{id}", "test")
-        .replace("{type}", "chat")
-        .replace("{code}", "fixture-model")
-    )
+    expected = operation["path"].replace("{id}", "test").replace("{type}", "chat").replace("{code}", "fixture-model")
     assert entry["method"] == operation["http_method"]
     assert entry["path"] == "/prefix/" + expected
     assert entry["authorization"] == "Bearer offline-token"
@@ -85,9 +52,7 @@ def test_all_sync_routes(endpoint, operation):
         assert entry["body"]["files"] == [{"url": "https://example.test/a", "name": "a.txt"}]
 
 
-@pytest.mark.parametrize(
-    "operation", MANIFEST, ids=lambda op: op["resource"] + "." + op["operation"]
-)
+@pytest.mark.parametrize("operation", MANIFEST, ids=lambda op: op["resource"] + "." + op["operation"])
 def test_all_async_routes(endpoint, operation):
     async def run():
         async with AsyncClient("offline-token", endpoint=endpoint) as client:
@@ -109,9 +74,7 @@ def test_mock_forwards_json_auth_and_preserves_injected_client():
 
     injected = httpx.Client(transport=httpx.MockTransport(handler))
     with Client("secret", http_client=injected) as client:
-        assert client.chat.completions({"model": "test", "stream": False, "x": [1, None]}) == {
-            "ok": True
-        }
+        assert client.chat.completions({"model": "test", "stream": False, "x": [1, None]}) == {"ok": True}
     assert not injected.is_closed
     assert json.loads(seen[0].content) == {"model": "test", "stream": False, "x": [1, None]}
     assert seen[0].headers["Authorization"] == "Bearer secret"
@@ -120,17 +83,11 @@ def test_mock_forwards_json_auth_and_preserves_injected_client():
 
 
 def test_runtime_version_and_async_user_agent_follow_metadata():
-    metadata = tomllib.loads(
-        (Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8")
-    )["project"]
+    metadata = tomllib.loads((Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8"))["project"]
     assert __version__ == metadata["version"]
 
     async def run():
-        async with httpx.AsyncClient(
-            transport=httpx.MockTransport(
-                lambda request: httpx.Response(200, json={"agent": request.headers["User-Agent"]})
-            )
-        ) as injected:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(200, json={"agent": request.headers["User-Agent"]}))) as injected:
             async with AsyncClient("test", http_client=injected) as client:
                 assert (await client.model.list())["agent"] == f"ThinkAI-Python/{__version__}"
 
@@ -196,9 +153,7 @@ def test_chat_audio_command_types_and_close(endpoint):
         stream.close()
         assert stream.response.is_closed
         assert isinstance(client.chat.completions({"model": "test", "stream": False}), dict)
-        assert list(
-            client.audio.speech({"model": "test", "input": "hello", "voice": "a", "stream": True})
-        )
+        assert list(client.audio.speech({"model": "test", "input": "hello", "voice": "a", "stream": True}))
         assert list(client.sandbox.run_command("test", "pwd", True))
         assert client.sandbox.write_file("test", "a", "hello") is None
 
@@ -251,13 +206,7 @@ def test_async_deadline_cancellation_and_stream_errors(endpoint):
                 self.closed = True
 
         body = PendingBody()
-        async with httpx.AsyncClient(
-            transport=httpx.MockTransport(
-                lambda request: httpx.Response(
-                    200, headers={"content-type": "text/event-stream"}, stream=body
-                )
-            )
-        ) as injected:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(200, headers={"content-type": "text/event-stream"}, stream=body))) as injected:
             async with AsyncClient("test", http_client=injected) as client:
                 assert client.timeout == 300
                 stream = await client.model.list()
@@ -280,18 +229,11 @@ def test_async_deadline_cancellation_and_stream_errors(endpoint):
                     except asyncio.CancelledError:
                         pass
         async with AsyncClient("test", endpoint=endpoint) as client:
-            stream = await client.responses.create(
-                {"model": "test", "input": "x", "__case": "invalid-sse"}
-            )
+            stream = await client.responses.create({"model": "test", "input": "x", "__case": "invalid-sse"})
             with pytest.raises(ProtocolError):
                 [event async for event in stream]
             assert stream.response.is_closed
-            events = [
-                event
-                async for event in await client.responses.create(
-                    {"model": "test", "input": "x", "__case": "fragmented-sse"}
-                )
-            ]
+            events = [event async for event in await client.responses.create({"model": "test", "input": "x", "__case": "fragmented-sse"})]
             assert events
 
     asyncio.run(run())
@@ -305,13 +247,7 @@ def test_async_stream_deadline_does_not_cancel_consumer_work():
             yield b"data: [DONE]\n\n"
 
     async def run():
-        async with httpx.AsyncClient(
-            transport=httpx.MockTransport(
-                lambda request: httpx.Response(
-                    200, headers={"content-type": "text/event-stream"}, stream=Waiting()
-                )
-            )
-        ) as injected:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(200, headers={"content-type": "text/event-stream"}, stream=Waiting()))) as injected:
             async with AsyncClient("test", timeout=0.02, http_client=injected) as client:
                 stream = await client.responses.create({"model": "test"})
                 iterator = stream.__aiter__()

@@ -60,7 +60,7 @@
       </resource>
     </resources>
     <plugins>
-      <!-- Formatting is explicit so normal builds remain independent of formatter JDK internals. -->
+      <!-- Formatting runs only through the explicit spotless:apply and spotless:check goals. -->
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
@@ -72,13 +72,10 @@
               <include>src/main/java/**/*.java</include>
               <include>src/test/java/**/*.java</include>
             </includes>
-            <googleJavaFormat>
-              <version>1.28.0</version>
-              <style>AOSP</style>
-              <reorderImports>true</reorderImports>
-              <reflowLongStrings>true</reflowLongStrings>
-              <formatJavadoc>false</formatJavadoc>
-            </googleJavaFormat>
+            <eclipse>
+              <version>4.26</version>
+              <file>${project.basedir}/eclipse-formatter.xml</file>
+            </eclipse>
             <trimTrailingWhitespace />
             <endWithNewline />
           </java>

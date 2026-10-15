@@ -166,7 +166,7 @@ xUnit 自动启动共享 Node.js loopback 服务，逐项调用 37 个操作，�
 
 ## 代码格式
 
-`dotnet/.editorconfig` 规定 C# 使用 4 空格和 LF，展开控制语句及非空方法块，控制语句使用大括号，保留现有 file-scoped namespace。使用 .NET SDK 自带的格式工具，在已 restore 的仓库根执行以下只读检查：
+`dotnet/.editorconfig` 规定 C# 使用 4 空格和 LF，展开控制语句及非空方法块，控制语句使用大括号，保留现有 file-scoped namespace。普通方法定义和调用的参数保持单行；复杂 lambda 和对象初始化器按内容展开。使用 .NET SDK 自带的格式工具，在已 restore 的仓库根执行以下只读检查：
 
 ```sh
 dotnet format whitespace dotnet/TopThink.ThinkAI/TopThink.ThinkAI.csproj --no-restore --verify-no-changes

@@ -3,20 +3,9 @@ import { test, before, after } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { createContractServer } from '../../tests/contracts/server.mjs';
-import {
-  Client,
-  EventStream,
-  BinaryStream,
-  APIError,
-  ProtocolError,
-  OperationTimeout,
-  TransportError,
-  VERSION,
-} from '../dist/esm/index.js';
+import { Client, EventStream, BinaryStream, APIError, ProtocolError, OperationTimeout, TransportError, VERSION } from '../dist/esm/index.js';
 
-const manifest = JSON.parse(
-  readFileSync(new URL('../../tests/contracts/operations.json', import.meta.url)),
-);
+const manifest = JSON.parse(readFileSync(new URL('../../tests/contracts/operations.json', import.meta.url)));
 const fixture = createContractServer();
 let endpoint;
 before(async () => {
@@ -33,8 +22,9 @@ function args(operation) {
   if (resource === 'model' && name === 'show') return ['chat', 'fixture-model'];
   if (resource === 'skill' && name === 'categories') return [];
   if (resource === 'skill' && name === 'download') return ['skill.zip'];
-  if (resource !== 'sandbox')
+  if (resource !== 'sandbox') {
     return [{ model: 'fixture-model', unknown: { nested: [1, false, null] } }];
+  }
   return {
     create: ['test'],
     get: ['test'],
@@ -64,16 +54,14 @@ for (const operation of manifest) {
     const client = new Client('offline-token', { endpoint: endpoint + 'prefix/' });
     await consume(await client[operation.resource][operation.operation](...args(operation)));
     const entry = fixture.requests.at(-1);
-    const path = operation.path
-      .replace('{id}', 'test')
-      .replace('{type}', 'chat')
-      .replace('{code}', 'fixture-model');
+    const path = operation.path.replace('{id}', 'test').replace('{type}', 'chat').replace('{code}', 'fixture-model');
     assert.equal(entry.path, '/prefix/' + path);
     assert.equal(entry.method, operation.http_method);
     assert.equal(entry.authorization, 'Bearer offline-token');
     if (entry.body?.unknown) assert.deepEqual(entry.body.unknown, { nested: [1, false, null] });
-    if (operation.operation === 'runCode')
+    if (operation.operation === 'runCode') {
       assert.deepEqual(entry.body.files, [{ url: 'https://example.test/a', name: 'a.txt' }]);
+    }
     if (operation.operation === 'uploadFile') {
       const multipart = Buffer.from(entry.raw_base64, 'base64');
       assert.match(entry.content_type, /^multipart\/form-data; boundary=/);
@@ -95,19 +83,10 @@ test('injected fetch forwards raw fields, auth and does not retry HTTP errors', 
       });
     },
   });
-  await assert.rejects(
-    client.chat.completions({ model: 'test', stream: false, x: null }),
-    (error) =>
-      error instanceof APIError &&
-      error.statusCode === 429 &&
-      JSON.parse(error.rawResponse).details === 1,
-  );
+  await assert.rejects(client.chat.completions({ model: 'test', stream: false, x: null }), (error) => error instanceof APIError && error.statusCode === 429 && JSON.parse(error.rawResponse).details === 1);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].init.headers.Authorization, 'Bearer test');
-  assert.equal(
-    VERSION,
-    JSON.parse(readFileSync(new URL('../package.json', import.meta.url))).version,
-  );
+  assert.equal(VERSION, JSON.parse(readFileSync(new URL('../package.json', import.meta.url))).version);
   assert.equal(calls[0].init.headers['User-Agent'], `ThinkAI-TypeScript/${VERSION}`);
   assert.deepEqual(JSON.parse(calls[0].init.body), { model: 'test', stream: false, x: null });
 });
@@ -138,26 +117,15 @@ test('chat default and explicit stream false use actual Content-Type', async () 
   const stream = await client.chat.completions({ model: 'test' });
   assert.ok(stream instanceof EventStream);
   await stream.close();
-  assert.equal(
-    (await client.chat.completions({ model: 'test', stream: false })).body.stream,
-    false,
-  );
-  assert.ok(
-    (
-      await consume(
-        await client.audio.speech({ model: 'test', input: 'hello', voice: 'a', stream: true }),
-      )
-    ).length,
-  );
+  assert.equal((await client.chat.completions({ model: 'test', stream: false })).body.stream, false);
+  assert.ok((await consume(await client.audio.speech({ model: 'test', input: 'hello', voice: 'a', stream: true }))).length);
   assert.ok((await consume(await client.sandbox.runCommand('test', 'pwd', true))).length);
 });
 
 for (const scenario of ['fragmented-sse', 'audio-sse', 'responses-error']) {
   test(`SSE ${scenario} preserves events`, async () => {
     const client = new Client('test', { endpoint });
-    const events = await consume(
-      await client.responses.create({ model: 'test', input: 'x', __case: scenario }),
-    );
+    const events = await consume(await client.responses.create({ model: 'test', input: 'x', __case: scenario }));
     assert.ok(events.length);
     if (scenario === 'responses-error') assert.ok(events.some((event) => event.chunks?.error));
   });
@@ -165,48 +133,28 @@ for (const scenario of ['fragmented-sse', 'audio-sse', 'responses-error']) {
 for (const scenario of ['invalid-json', 'invalid-sse']) {
   test(`rejects ${scenario}`, async () => {
     const client = new Client('test', { endpoint });
-    await assert.rejects(
-      async () =>
-        consume(await client.responses.create({ model: 'test', input: 'x', __case: scenario })),
-      ProtocolError,
-    );
+    await assert.rejects(async () => consume(await client.responses.create({ model: 'test', input: 'x', __case: scenario })), ProtocolError);
   });
 }
 test('disconnect closes stream and reports transport or incomplete protocol', async () => {
   const client = new Client('test', { endpoint });
   await assert.rejects(
-    async () =>
-      consume(await client.responses.create({ model: 'test', input: 'x', __case: 'disconnect' })),
+    async () => consume(await client.responses.create({ model: 'test', input: 'x', __case: 'disconnect' })),
     (error) => error instanceof ProtocolError || error instanceof TransportError,
   );
 });
 test('Avatar wait preserves task IDs and returns fail; query exceptions propagate', async () => {
   const client = new Client('test', { endpoint, pollInterval: 0.001 });
-  assert.equal(
-    (await client.avatar.video({ model: 'fixture:wait-success' }, true)).status,
-    'success',
-  );
+  assert.equal((await client.avatar.video({ model: 'fixture:wait-success' }, true)).status, 'success');
   assert.equal((await client.avatar.video({ model: 'fixture:wait-fail' }, true)).status, 'fail');
-  await assert.rejects(
-    client.avatar.video({ model: 'fixture:wait-error' }, true),
-    (error) => error instanceof APIError && error.statusCode === 403,
-  );
-  await assert.rejects(
-    client.avatar.video({ model: 'fixture:wait-timeout' }, 0.02),
-    OperationTimeout,
-  );
+  await assert.rejects(client.avatar.video({ model: 'fixture:wait-error' }, true), (error) => error instanceof APIError && error.statusCode === 403);
+  await assert.rejects(client.avatar.video({ model: 'fixture:wait-timeout' }, 0.02), OperationTimeout);
 });
 test('total timeout and caller cancellation stop real HTTP requests', async () => {
   const client = new Client('test', { endpoint, timeout: 0.02 });
-  await assert.rejects(
-    async () => consume(await client.model.list({ __case: 'slow', __delay_ms: 100 })),
-    OperationTimeout,
-  );
+  await assert.rejects(async () => consume(await client.model.list({ __case: 'slow', __delay_ms: 100 })), OperationTimeout);
   const controller = new AbortController();
-  const pending = client.model.list(
-    { __case: 'slow', __delay_ms: 100 },
-    { signal: controller.signal },
-  );
+  const pending = client.model.list({ __case: 'slow', __delay_ms: 100 }, { signal: controller.signal });
   controller.abort();
   await assert.rejects(pending, (error) => error.name === 'AbortError');
 });

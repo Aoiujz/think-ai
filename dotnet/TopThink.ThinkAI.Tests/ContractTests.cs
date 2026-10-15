@@ -32,8 +32,7 @@ public sealed class ContractServer : IAsyncLifetime
         start.ArgumentList.Add(Path.Combine(Root, "tests", "contracts", "server.mjs"));
         start.Environment["PORT"] = "0";
         _process = Process.Start(start)!;
-        string line = await _process.StandardOutput.ReadLineAsync()
-            .WaitAsync(TimeSpan.FromSeconds(15))
+        string line = await _process.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(15))
             ?? throw new InvalidOperationException("协议服务未启动。");
         Endpoint = new Uri(JsonNode.Parse(line)!["endpoint"]!.GetValue<string>());
     }
@@ -60,8 +59,7 @@ public sealed class ContractServer : IAsyncLifetime
     public async Task<JsonArray> Requests()
     {
         using var http = new HttpClient();
-        return (JsonArray)JsonNode.Parse(
-            await http.GetStringAsync(new Uri(Endpoint, "__requests")))!;
+        return (JsonArray)JsonNode.Parse(await http.GetStringAsync(new Uri(Endpoint, "__requests")))!;
     }
 
     public async Task Reset()
@@ -101,9 +99,7 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
     {
         await server.Reset();
         using var client = server.Client();
-        var manifest = (JsonArray)JsonNode.Parse(
-            await File.ReadAllTextAsync(
-                Path.Combine(server.Root, "tests", "contracts", "operations.json")))!;
+        var manifest = (JsonArray)JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(server.Root, "tests", "contracts", "operations.json")))!;
         Assert.Equal(37, manifest.Count);
         int count = 0;
         foreach (var entry in manifest)
@@ -112,10 +108,7 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
                 operation = entry["operation"]!.GetValue<string>();
             string Capital(string value) => char.ToUpperInvariant(value[0]) + value[1..];
             object target = typeof(ThinkAIClient).GetProperty(Capital(resource))!.GetValue(client)!;
-            var method = target.GetType().GetMethods().First(x =>
-                x.Name == Capital(operation) + "Async" &&
-                (operation != "uploadFile" ||
-                    x.GetParameters().Any(p => p.ParameterType == typeof(Stream))));
+            var method = target.GetType().GetMethods().First(x => x.Name == Capital(operation) + "Async" && (operation != "uploadFile" || x.GetParameters().Any(p => p.ParameterType == typeof(Stream))));
             using var upload = new MemoryStream(new byte[] { 0, 1, 255, 42 });
             object?[] arguments = method.GetParameters().Select(parameter => parameter.Name switch
             {
@@ -129,8 +122,7 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
                 "newStr" => "new",
                 "command" => "echo 你好",
                 "file" => upload,
-                "files" => JsonNode.Parse(
-                    "[{\"url\":\"https://example.test/a\",\"name\":\"a.txt\",\"extra\":true}]") as JsonArray,
+                "files" => JsonNode.Parse("[{\"url\":\"https://example.test/a\",\"name\":\"a.txt\",\"extra\":true}]") as JsonArray,
                 "wait" or "stream" => false,
                 "waitTimeout" or "pollInterval" => null,
                 "cancellationToken" => (object)CancellationToken.None,
@@ -151,14 +143,8 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
                 Assert.Equal(8, sink.Length);
             }
             var captured = (await server.Requests())[count++]!;
-            Assert.Equal(
-                entry["http_method"]!.GetValue<string>(), captured["method"]!.GetValue<string>());
-            Assert.Equal(
-                "/" + entry["path"]!.GetValue<string>()
-                    .Replace("{id}", "box")
-                    .Replace("{type}", "chat")
-                    .Replace("{code}", "code"),
-                captured["path"]!.GetValue<string>());
+            Assert.Equal(entry["http_method"]!.GetValue<string>(), captured["method"]!.GetValue<string>());
+            Assert.Equal("/" + entry["path"]!.GetValue<string>().Replace("{id}", "box").Replace("{type}", "chat").Replace("{code}", "code"), captured["path"]!.GetValue<string>());
             Assert.Equal("Bearer offline-token", captured["authorization"]!.GetValue<string>());
             if (captured["body"]?["custom"] is not null)
             {
@@ -167,9 +153,7 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
 
             if (operation == "runCode")
             {
-                Assert.Equal(
-                    "https://example.test/a",
-                    captured["body"]!["files"]![0]!["url"]!.GetValue<string>());
+                Assert.Equal("https://example.test/a", captured["body"]!["files"]![0]!["url"]!.GetValue<string>());
             }
 
             if (operation == "uploadFile")
@@ -196,8 +180,7 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
         Assert.False(body.ContainsKey("stream"));
         using var normal = await client.Chat.CompletionsAsync(P());
         Assert.Equal(ResultKind.Json, normal.Kind);
-        using var streamed = await client.Chat.CompletionsAsync(
-            new JsonObject { ["model"] = "offline" });
+        using var streamed = await client.Chat.CompletionsAsync(new JsonObject { ["model"] = "offline" });
         Assert.Equal(2, (await Events(streamed)).Count);
         using var audio = await client.Audio.SpeechAsync(P("audio-sse"));
         Assert.Equal("AAEC", (await Events(audio))[0].Data!["audio"]!["data"]!.GetValue<string>());
@@ -232,8 +215,7 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
         using var client = server.Client();
         var p = P("error");
         p["__status"] = status;
-        var error = await Assert.ThrowsAsync<ThinkAIException>(
-            () => client.Images.GenerationsAsync(p));
+        var error = await Assert.ThrowsAsync<ThinkAIException>(() => client.Images.GenerationsAsync(p));
         Assert.Equal(status, error.StatusCode);
         Assert.Contains("Offline fixture error", error.RawBody);
         Assert.Single(await server.Requests());
@@ -243,8 +225,7 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
     public async Task InvalidJsonInvalidSseAndDisconnectFailVisibly()
     {
         using var client = server.Client();
-        var json = await Assert.ThrowsAsync<ThinkAIException>(
-            () => client.Images.GenerationsAsync(P("invalid-json")));
+        var json = await Assert.ThrowsAsync<ThinkAIException>(() => client.Images.GenerationsAsync(P("invalid-json")));
         Assert.Equal("{invalid", json.RawBody);
         Assert.NotNull(json.InnerException);
         using var invalid = await client.Responses.CreateAsync(P("invalid-sse"));
@@ -281,33 +262,22 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
         Assert.Equal("success", completed.Json!["status"]!.GetValue<string>());
         using var failed = await client.Avatar.VideoAsync(P("wait-fail"), true);
         Assert.Equal("fail", failed.Json!["status"]!.GetValue<string>());
-        var error = await Assert.ThrowsAsync<ThinkAIException>(
-            () => client.Avatar.VideoAsync(P("wait-error"), true));
+        var error = await Assert.ThrowsAsync<ThinkAIException>(() => client.Avatar.VideoAsync(P("wait-error"), true));
         Assert.Equal(403, error.StatusCode);
-        await Assert.ThrowsAsync<ThinkAIException>(() => client.Avatar.VideoAsync(
-            P("wait-timeout"),
-            true,
-            TimeSpan.FromMilliseconds(40),
-            TimeSpan.FromMilliseconds(2)));
+        await Assert.ThrowsAsync<ThinkAIException>(() => client.Avatar.VideoAsync(P("wait-timeout"), true, TimeSpan.FromMilliseconds(40), TimeSpan.FromMilliseconds(2)));
         var requests = await server.Requests();
-        var queries = requests.Where(r => r!["path"]!.GetValue<string>() == "/avatar/query")
-            .ToArray();
-        Assert.All(queries, r =>
-            Assert.StartsWith("offline-task-", r!["body"]!["id"]!.GetValue<string>()));
+        var queries = requests.Where(r => r!["path"]!.GetValue<string>() == "/avatar/query").ToArray();
+        Assert.All(queries, r => Assert.StartsWith("offline-task-", r!["body"]!["id"]!.GetValue<string>()));
     }
 
     [Fact]
     public async Task InjectedHttpClientIsUsableAfterSdkDisposalAndEndpointPrefixIsPreserved()
     {
         using var http = new HttpClient();
-        using (var client = new ThinkAIClient(
-            "offline-token",
-            new ThinkAIOptions { Endpoint = new Uri(server.Endpoint, "prefix") },
-            http))
+        using (var client = new ThinkAIClient("offline-token", new ThinkAIOptions { Endpoint = new Uri(server.Endpoint, "prefix") }, http))
         {
             using var result = await client.Model.ShowAsync("chat", "code/a b");
-            Assert.Equal(
-                "/prefix/model/chat/code%2Fa%20b", result.Json!["path"]!.GetValue<string>());
+            Assert.Equal("/prefix/model/chat/code%2Fa%20b", result.Json!["path"]!.GetValue<string>());
         }
         Assert.Contains("true", await http.GetStringAsync(new Uri(server.Endpoint, "__health")));
     }
@@ -357,7 +327,6 @@ public sealed class ContractTests(ContractServer server) : IClassFixture<Contrac
         await using var pending = cancellable.Events!.GetAsyncEnumerator();
         Assert.True(await pending.MoveNextAsync());
         cancellation.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            async () => await pending.MoveNextAsync());
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await pending.MoveNextAsync());
     }
 }

@@ -7,11 +7,8 @@ export interface RequestOptions {
   timeout?: number;
 }
 export class APIError extends Error {
-  constructor(
-    message: string,
-    public readonly statusCode: number,
-    public readonly rawResponse: string,
-  ) {
+  // prettier-ignore
+  constructor(message: string, public readonly statusCode: number, public readonly rawResponse: string) {
     super(message);
     this.name = 'APIError';
   }
@@ -40,11 +37,8 @@ export class BinaryStream implements AsyncIterable<Uint8Array>, AsyncDisposable 
   protected reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   private closed = false;
   private used = false;
-  constructor(
-    public readonly response: Response,
-    protected readonly signal: AbortSignal,
-    private readonly cleanup: () => void,
-  ) {
+  // prettier-ignore
+  constructor(public readonly response: Response, protected readonly signal: AbortSignal, private readonly cleanup: () => void) {
     signal.addEventListener('abort', this.onAbort, { once: true });
   }
   private onAbort = () => {
@@ -96,8 +90,11 @@ export class BinaryStream implements AsyncIterable<Uint8Array>, AsyncDisposable 
     this.signal.removeEventListener('abort', this.onAbort);
     this.cleanup();
     try {
-      if (this.reader) await this.reader.cancel();
-      else await this.response.body?.cancel();
+      if (this.reader) {
+        await this.reader.cancel();
+      } else {
+        await this.response.body?.cancel();
+      }
     } finally {
       this.reader?.releaseLock();
     }
@@ -108,10 +105,8 @@ export class BinaryStream implements AsyncIterable<Uint8Array>, AsyncDisposable 
 }
 
 export class EventStream implements AsyncIterable<Json>, AsyncDisposable {
-  constructor(
-    private readonly binary: BinaryStream,
-    private readonly signal: AbortSignal,
-  ) {}
+  // prettier-ignore
+  constructor(private readonly binary: BinaryStream, private readonly signal: AbortSignal) {}
   async *[Symbol.asyncIterator](): AsyncIterator<Json> {
     const decoder = new TextDecoder('utf-8', { fatal: true });
     let buffer = '';
@@ -143,8 +138,9 @@ export class EventStream implements AsyncIterable<Json>, AsyncDisposable {
       }
       buffer += decoder.decode();
       if (this.signal.aborted) throw this.signal.reason;
-      if (buffer.startsWith('data:'))
+      if (buffer.startsWith('data:')) {
         data.push(buffer.slice(5).replace(/^ /, '').replace(/\r$/, ''));
+      }
       if (data.length) {
         const event = decode();
         if (event === DONE) return;
@@ -152,8 +148,9 @@ export class EventStream implements AsyncIterable<Json>, AsyncDisposable {
       }
       throw new ProtocolError('SSE stream ended before [DONE]');
     } catch (error) {
-      if (error instanceof TypeError)
+      if (error instanceof TypeError) {
         throw new ProtocolError('Invalid UTF-8 in SSE stream', { cause: error });
+      }
       throw error;
     } finally {
       await this.close();
@@ -179,34 +176,29 @@ function queryPairs(params: Params): [string, string][] {
   const result: [string, string][] = [];
   const append = (key: string, value: unknown): void => {
     if (value == null) return;
-    if (Array.isArray(value)) value.forEach((item, index) => append(`${key}[${index}]`, item));
-    else if (typeof value === 'object')
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => append(`${key}[${index}]`, item));
+    } else if (typeof value === 'object') {
       for (const [child, item] of Object.entries(value)) append(`${key}[${child}]`, item);
-    else result.push([key, value === true ? '1' : value === false ? '0' : String(value)]);
+    } else {
+      result.push([key, value === true ? '1' : value === false ? '0' : String(value)]);
+    }
   };
   for (const [key, value] of Object.entries(params)) append(key, value);
   return result;
 }
-export async function request(
-  config: TransportOptions,
-  method: string,
-  path: string,
-  params: Params | undefined,
-  options: RequestOptions = {},
-  multipart?: FormData,
-  forceBinary = false,
-): Promise<Result> {
+export async function request(config: TransportOptions, method: string, path: string, params: Params | undefined, options: RequestOptions = {}, multipart?: FormData, forceBinary = false): Promise<Result> {
   const timeout = options.timeout ?? config.timeout;
   if (!(timeout > 0)) throw new RangeError('timeout must be positive');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(new OperationTimeout()), timeout * 1000);
   timer.unref?.();
-  const onAbort = () =>
-    controller.abort(
-      options.signal?.reason ?? new DOMException('Operation cancelled', 'AbortError'),
-    );
-  if (options.signal?.aborted) onAbort();
-  else options.signal?.addEventListener('abort', onAbort, { once: true });
+  const onAbort = () => controller.abort(options.signal?.reason ?? new DOMException('Operation cancelled', 'AbortError'));
+  if (options.signal?.aborted) {
+    onAbort();
+  } else {
+    options.signal?.addEventListener('abort', onAbort, { once: true });
+  }
   const cleanup = () => {
     clearTimeout(timer);
     options.signal?.removeEventListener('abort', onAbort);
@@ -218,12 +210,10 @@ export async function request(
   };
   try {
     check();
-    const url = new URL(
-      path,
-      config.endpoint.endsWith('/') ? config.endpoint : config.endpoint + '/',
-    );
-    if (method === 'GET' && params)
+    const url = new URL(path, config.endpoint.endsWith('/') ? config.endpoint : config.endpoint + '/');
+    if (method === 'GET' && params) {
       for (const [key, value] of queryPairs(params)) url.searchParams.append(key, value);
+    }
     const headers: Record<string, string> = {
       Authorization: `Bearer ${config.token}`,
       'User-Agent': `ThinkAI-TypeScript/${VERSION}`,
@@ -254,10 +244,7 @@ export async function request(
     const contentType = (response.headers.get('content-type') ?? '').toLowerCase();
     if (contentType.includes('text/event-stream')) {
       retained = true;
-      return new EventStream(
-        new BinaryStream(response, controller.signal, cleanup),
-        controller.signal,
-      );
+      return new EventStream(new BinaryStream(response, controller.signal, cleanup), controller.signal);
     }
     if (contentType.includes('application/json') || contentType.includes('+json')) {
       const body = await response.text();
@@ -269,12 +256,9 @@ export async function request(
         throw new ProtocolError('Invalid JSON response', { cause: error });
       }
     }
-    if (
-      response.status === 204 ||
-      response.status === 205 ||
-      response.headers.get('content-length') === '0'
-    )
+    if (response.status === 204 || response.status === 205 || response.headers.get('content-length') === '0') {
       return null;
+    }
     retained = true;
     return new BinaryStream(response, controller.signal, cleanup);
   } catch (error) {

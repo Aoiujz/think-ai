@@ -19,10 +19,7 @@ export function createContractServer() {
     const raw = Buffer.concat(chunks);
     let body = null;
     try {
-      body =
-        raw.length && request.headers['content-type']?.includes('application/json')
-          ? JSON.parse(raw.toString('utf8'))
-          : null;
+      body = raw.length && request.headers['content-type']?.includes('application/json') ? JSON.parse(raw.toString('utf8')) : null;
     } catch {
       response.writeHead(400, { 'Content-Type': 'application/json' });
       return response.end(JSON.stringify({ message: 'Invalid request JSON' }));
@@ -39,9 +36,7 @@ export function createContractServer() {
       return json({ ok: true });
     }
     const pathname = url.pathname.replace(/^\/prefix(?=\/)/, '');
-    const route = routes.find(
-      (item) => item.http_method === request.method && item.pattern.test(pathname),
-    );
+    const route = routes.find((item) => item.http_method === request.method && item.pattern.test(pathname));
     if (!route) return json({ message: 'Unknown contract route' }, 404);
     const entry = {
       method: request.method,
@@ -53,17 +48,13 @@ export function createContractServer() {
       raw_base64: raw.toString('base64'),
     };
     requests.push(entry);
-    if (!request.headers.authorization?.startsWith('Bearer '))
+    if (!request.headers.authorization?.startsWith('Bearer ')) {
       return json({ message: 'Unauthorized' }, 401);
-    const testCase =
-      body?.__case ??
-      url.searchParams.get('__case') ??
-      (body?.model?.startsWith('fixture:') ? body.model.slice(8) : null);
-    if (testCase === 'error' || testCase === 'http-error')
-      return json(
-        { message: 'Offline fixture error', details: { field: 'model' } },
-        Number(body?.__status ?? url.searchParams.get('__status') ?? 400),
-      );
+    }
+    const testCase = body?.__case ?? url.searchParams.get('__case') ?? (body?.model?.startsWith('fixture:') ? body.model.slice(8) : null);
+    if (testCase === 'error' || testCase === 'http-error') {
+      return json({ message: 'Offline fixture error', details: { field: 'model' } }, Number(body?.__status ?? url.searchParams.get('__status') ?? 400));
+    }
     if (testCase === 'invalid-json') {
       response.writeHead(200, { 'Content-Type': 'application/json' });
       return response.end('{invalid');
@@ -78,8 +69,9 @@ export function createContractServer() {
       if (body.model !== task.model) return json({ message: 'Polling model changed' }, 400);
       task.queries++;
       if (task.testCase === 'wait-error') return json({ message: 'Query failed' }, 403);
-      if (task.testCase === 'wait-timeout' || task.queries === 1)
+      if (task.testCase === 'wait-timeout' || task.queries === 1) {
         return json({ id: body.id, status: 'processing' });
+      }
       return json({
         id: body.id,
         status: task.testCase === 'wait-fail' ? 'fail' : 'success',
@@ -101,32 +93,13 @@ export function createContractServer() {
       });
       return response.end(Buffer.from([0, 1, 2, 255, 10, 13, 80, 75]));
     }
-    const streaming =
-      route.response === 'sse' ||
-      testCase?.includes('sse') ||
-      testCase === 'responses-error' ||
-      testCase === 'slow' ||
-      testCase === 'disconnect' ||
-      (pathname === '/chat/completions' && body?.stream !== false && testCase !== 'json') ||
-      (pathname === '/audio/speech' && body?.stream === true) ||
-      (pathname.endsWith('/command') && body?.stream === true);
+    const streaming = route.response === 'sse' || testCase?.includes('sse') || testCase === 'responses-error' || testCase === 'slow' || testCase === 'disconnect' || (pathname === '/chat/completions' && body?.stream !== false && testCase !== 'json') || (pathname === '/audio/speech' && body?.stream === true) || (pathname.endsWith('/command') && body?.stream === true);
     if (!streaming) return json(entry);
     const events =
       pathname === '/responses'
-        ? [
-            { chunks: { index: 0, content: '你好🌍' } },
-            ...(testCase === 'responses-error'
-              ? [{ chunks: { index: 0, error: 'Offline event error' } }]
-              : []),
-            { stats: { usage: 2, latency: 1 } },
-            { id: 'offline-response' },
-          ]
+        ? [{ chunks: { index: 0, content: '你好🌍' } }, ...(testCase === 'responses-error' ? [{ chunks: { index: 0, error: 'Offline event error' } }] : []), { stats: { usage: 2, latency: 1 } }, { id: 'offline-response' }]
         : testCase === 'audio-sse' || pathname === '/audio/speech'
-          ? [
-              { audio: { type: 'audio/x-wav', data: 'AAEC' } },
-              { audio: { type: 'audio/x-wav', data: '/w==' } },
-              { sentences: [], usage: { prompt_tokens: 1, completion_tokens: 0, total_tokens: 1 } },
-            ]
+          ? [{ audio: { type: 'audio/x-wav', data: 'AAEC' } }, { audio: { type: 'audio/x-wav', data: '/w==' } }, { sentences: [], usage: { prompt_tokens: 1, completion_tokens: 0, total_tokens: 1 } }]
           : [
               { delta: { content: '你好🌍' } },
               {
@@ -142,11 +115,7 @@ export function createContractServer() {
             .map((event, index) => {
               const value = JSON.stringify(event);
               // A whitespace boundary inside a JSON object makes a valid multiline data event.
-              return (
-                'data: ' +
-                (index === 0 ? value.slice(0, 1) + '\r\ndata: ' + value.slice(1) : value) +
-                '\r\n\r\n'
-              );
+              return 'data: ' + (index === 0 ? value.slice(0, 1) + '\r\ndata: ' + value.slice(1) : value) + '\r\n\r\n';
             })
             .join('') +
           'data: [DONE]\r\n\r\n';

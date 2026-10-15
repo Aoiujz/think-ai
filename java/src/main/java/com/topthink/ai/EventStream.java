@@ -12,9 +12,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /** 单次读取、可关闭的 SSE 迭代器，保留 ThinkAI 自有事件的数据及元数据。 */
-public final class EventStream
-        implements Iterable<EventStream.Event>, Iterator<EventStream.Event>, AutoCloseable {
-    public record Event(String event, String id, String rawData, JsonNode data, String retry) {}
+public final class EventStream implements Iterable<EventStream.Event>, Iterator<EventStream.Event>, AutoCloseable {
+    public record Event(String event, String id, String rawData, JsonNode data, String retry) {
+    }
 
     private final BufferedReader reader;
     private final InputStream stream;
@@ -26,14 +26,7 @@ public final class EventStream
 
     EventStream(InputStream stream, ObjectMapper mapper, int status) {
         this.stream = stream;
-        this.reader =
-                new BufferedReader(
-                        new InputStreamReader(
-                                stream,
-                                StandardCharsets.UTF_8
-                                        .newDecoder()
-                                        .onMalformedInput(
-                                                java.nio.charset.CodingErrorAction.REPORT)));
+        this.reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)));
         this.mapper = mapper;
         this.status = status;
     }
@@ -69,11 +62,7 @@ public final class EventStream
                 checkActive();
                 String line = reader.readLine();
                 if (line == null) {
-                    throw new ThinkAIException(
-                            "事件流在 [DONE] 前截断。",
-                            status,
-                            String.join("\n", data),
-                            new java.io.EOFException());
+                    throw new ThinkAIException("事件流在 [DONE] 前截断。", status, String.join("\n", data), new java.io.EOFException());
                 }
                 if (line == null || line.isEmpty()) {
                     if (!data.isEmpty()) {
@@ -127,7 +116,8 @@ public final class EventStream
                         }
                     }
                     case "retry" -> retry = value;
-                    default -> {}
+                    default -> {
+                    }
                 }
             }
         } catch (RuntimeException error) {

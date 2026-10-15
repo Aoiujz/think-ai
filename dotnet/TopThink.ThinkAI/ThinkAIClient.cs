@@ -27,10 +27,7 @@ public sealed partial class ThinkAIClient : IDisposable
     private int _disposed;
     internal readonly ThinkAIOptions Options;
 
-    public ThinkAIClient(
-        string token,
-        ThinkAIOptions? options = null,
-        HttpClient? httpClient = null)
+    public ThinkAIClient(string token, ThinkAIOptions? options = null, HttpClient? httpClient = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
         Options = options ?? new ThinkAIOptions();
@@ -115,13 +112,7 @@ public sealed partial class ThinkAIClient : IDisposable
         output.Add(Uri.EscapeDataString(key) + "=" + Uri.EscapeDataString(text));
     }
 
-    internal Task<ApiResult> JsonRequestAsync(
-        string method,
-        string path,
-        JsonObject? body = null,
-        JsonObject? query = null,
-        CancellationToken cancellationToken = default,
-        bool binary = false)
+    internal Task<ApiResult> JsonRequestAsync(string method, string path, JsonObject? body = null, JsonObject? query = null, CancellationToken cancellationToken = default, bool binary = false)
     {
         HttpContent? content = body is null
             ? null
@@ -129,17 +120,9 @@ public sealed partial class ThinkAIClient : IDisposable
         return RequestAsync(method, path, content, query, cancellationToken, binary);
     }
 
-    internal async Task<ApiResult> RequestAsync(
-        string method,
-        string path,
-        HttpContent? content,
-        JsonObject? query,
-        CancellationToken cancellationToken,
-        bool binary = false)
+    internal async Task<ApiResult> RequestAsync(string method, string path, HttpContent? content, JsonObject? query, CancellationToken cancellationToken, bool binary = false)
     {
-        var lifetime = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken,
-            _closed.Token);
+        var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _closed.Token);
         lifetime.CancelAfter(Options.OperationTimeout);
         HttpResponseMessage? response = null;
         bool transferred = false;
@@ -154,26 +137,19 @@ public sealed partial class ThinkAIClient : IDisposable
                 }
             }
 
-            var url = new Uri(
-                _endpoint,
-                path + (pairs.Count == 0 ? "" : "?" + string.Join("&", pairs)));
+            var url = new Uri(_endpoint, path + (pairs.Count == 0 ? "" : "?" + string.Join("&", pairs)));
             using var request = new HttpRequestMessage(new HttpMethod(method), url)
             {
                 Content = content
             };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
             request.Headers.UserAgent.ParseAdd("ThinkAI-dotnet/" + Version);
-            request.Headers.Accept.ParseAdd(
-                "application/json, text/event-stream, application/octet-stream");
-            response = await _http.SendAsync(
-                request,
-                HttpCompletionOption.ResponseHeadersRead,
-                lifetime.Token).ConfigureAwait(false);
+            request.Headers.Accept.ParseAdd("application/json, text/event-stream, application/octet-stream");
+            response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, lifetime.Token).ConfigureAwait(false);
             int status = (int)response.StatusCode;
             if (!response.IsSuccessStatusCode)
             {
-                var raw = await response.Content.ReadAsStringAsync(lifetime.Token)
-                    .ConfigureAwait(false);
+                var raw = await response.Content.ReadAsStringAsync(lifetime.Token).ConfigureAwait(false);
                 throw new ThinkAIException($"ThinkAI HTTP {status}", status, raw);
             }
             if (status is 204 or 205 || (!binary && response.Content.Headers.ContentLength == 0))
@@ -185,8 +161,7 @@ public sealed partial class ThinkAIClient : IDisposable
             if (!binary &&
                 (type == "application/json" || type.EndsWith("+json", StringComparison.Ordinal)))
             {
-                var raw = await response.Content.ReadAsStringAsync(lifetime.Token)
-                    .ConfigureAwait(false);
+                var raw = await response.Content.ReadAsStringAsync(lifetime.Token).ConfigureAwait(false);
                 if (raw.Length == 0)
                 {
                     return new ApiResult(ResultKind.Empty, status);
@@ -201,11 +176,7 @@ public sealed partial class ThinkAIClient : IDisposable
                     throw new ThinkAIException("无效 JSON 响应。", status, raw, error);
                 }
             }
-            var stream = new ResponseStream(
-                await response.Content.ReadAsStreamAsync(lifetime.Token).ConfigureAwait(false),
-                response,
-                lifetime,
-                cancellationToken);
+            var stream = new ResponseStream(await response.Content.ReadAsStreamAsync(lifetime.Token).ConfigureAwait(false), response, lifetime, cancellationToken);
             transferred = true;
             return !binary && type == "text/event-stream"
                 ? new ApiResult(ResultKind.Events, status, events: new EventStream(stream, status))
@@ -214,24 +185,15 @@ public sealed partial class ThinkAIClient : IDisposable
         catch (OperationCanceledException error) when (
             !cancellationToken.IsCancellationRequested && !_closed.IsCancellationRequested)
         {
-            throw new ThinkAIException(
-                "操作总时限已到。",
-                response is null ? null : (int)response.StatusCode,
-                innerException: error);
+            throw new ThinkAIException("操作总时限已到。", response is null ? null : (int)response.StatusCode, innerException: error);
         }
         catch (HttpRequestException error)
         {
-            throw new ThinkAIException(
-                "ThinkAI HTTP 传输失败。",
-                error.StatusCode is null ? null : (int)error.StatusCode,
-                innerException: error);
+            throw new ThinkAIException("ThinkAI HTTP 传输失败。", error.StatusCode is null ? null : (int)error.StatusCode, innerException: error);
         }
         catch (IOException error)
         {
-            throw new ThinkAIException(
-                "读取响应失败。",
-                response is null ? null : (int)response.StatusCode,
-                innerException: error);
+            throw new ThinkAIException("读取响应失败。", response is null ? null : (int)response.StatusCode, innerException: error);
         }
         finally
         {

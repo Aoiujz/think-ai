@@ -5,8 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.InputStream;
 
 /** 按实际 Content-Type 判别的结果；Binary 与 Events 必须在 try-with-resources 中消费。 */
-public sealed interface ApiResult extends AutoCloseable
-        permits ApiResult.Json, ApiResult.Events, ApiResult.Binary, ApiResult.Empty {
+public sealed interface ApiResult extends AutoCloseable permits ApiResult.Json, ApiResult.Events, ApiResult.Binary, ApiResult.Empty {
     int statusCode();
 
     @Override
@@ -19,9 +18,11 @@ public sealed interface ApiResult extends AutoCloseable
         throw new IllegalStateException("响应不是 JSON。");
     }
 
-    record Json(int statusCode, JsonNode value) implements ApiResult {}
+    record Json(int statusCode, JsonNode value) implements ApiResult {
+    }
 
-    record Empty(int statusCode) implements ApiResult {}
+    record Empty(int statusCode) implements ApiResult {
+    }
 
     record Events(int statusCode, EventStream stream) implements ApiResult {
         @Override

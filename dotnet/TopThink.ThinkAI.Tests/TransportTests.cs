@@ -7,13 +7,10 @@ namespace TopThink.ThinkAI.Tests;
 
 public sealed class TransportTests
 {
-    private sealed class Handler(
-        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send)
+    private sealed class Handler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send)
         : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             => send(request, cancellationToken);
     }
 
@@ -43,8 +40,7 @@ public sealed class TransportTests
             var body = JsonNode.Parse(await request.Content!.ReadAsStringAsync(token));
             Assert.True(JsonNode.DeepEquals(input, body));
             Assert.Equal("Bearer offline", request.Headers.Authorization!.ToString());
-            Assert.Equal(
-                "ThinkAI-dotnet/" + ThinkAIClient.Version, request.Headers.UserAgent.ToString());
+            Assert.Equal("ThinkAI-dotnet/" + ThinkAIClient.Version, request.Headers.UserAgent.ToString());
             return Response("application/json", "null");
         }));
         using var client = new ThinkAIClient("offline", httpClient: http);
@@ -77,16 +73,14 @@ public sealed class TransportTests
     [Fact]
     public async Task SseEofWithoutDoneRaisesProtocolErrorAndClosesStream()
     {
-        var stream = new TrackedStream(Encoding.UTF8.GetBytes(
-            "id: one\nevent: custom\ndata: {\"future\":null}\n\n"));
+        var stream = new TrackedStream(Encoding.UTF8.GetBytes("id: one\nevent: custom\ndata: {\"future\":null}\n\n"));
         using var http = new HttpClient(new Handler((request, token) =>
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StreamContent(stream)
             };
-            response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
-                "text/event-stream");
+            response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/event-stream");
             return Task.FromResult(response);
         }));
         using var client = new ThinkAIClient("offline", httpClient: http);
@@ -96,8 +90,7 @@ public sealed class TransportTests
         Assert.Equal("one", events.Current.Id);
         Assert.Equal("custom", events.Current.Event);
         Assert.True(events.Current.Data!.AsObject().ContainsKey("future"));
-        var error = await Assert.ThrowsAsync<ThinkAIException>(
-            async () => await events.MoveNextAsync());
+        var error = await Assert.ThrowsAsync<ThinkAIException>(async () => await events.MoveNextAsync());
         Assert.IsType<EndOfStreamException>(error.InnerException);
         Assert.True(stream.Closed);
     }
@@ -117,13 +110,9 @@ public sealed class TransportTests
     public async Task AvatarMissingOrUnknownStatusDoesNotPollForever()
     {
         int requests = 0;
-        using var http = new HttpClient(new Handler((request, token) =>
-            Task.FromResult(Response(
-                "application/json",
-                ++requests == 1 ? "{\"id\":\"original\"}" : "{\"status\":\"unexpected\"}"))));
+        using var http = new HttpClient(new Handler((request, token) => Task.FromResult(Response("application/json", ++requests == 1 ? "{\"id\":\"original\"}" : "{\"status\":\"unexpected\"}"))));
         using var client = new ThinkAIClient("offline", httpClient: http);
-        await Assert.ThrowsAsync<ThinkAIException>(() => client.Avatar.VideoAsync(
-            new JsonObject { ["model"] = "offline" }, true));
+        await Assert.ThrowsAsync<ThinkAIException>(() => client.Avatar.VideoAsync(new JsonObject { ["model"] = "offline" }, true));
         Assert.Equal(2, requests);
     }
 }
