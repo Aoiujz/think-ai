@@ -156,13 +156,37 @@ def test_async_deadline_cancellation_and_stream_errors(endpoint):
             with pytest.raises(OperationTimeout):
                 stream = await client.model.list({"__case": "slow", "__delay_ms": 100})
                 [event async for event in stream]
-            async def consume_slow():
-                stream = await client.model.list({"__case": "slow", "__delay_ms": 100})
-                return [event async for event in stream]
-            task = asyncio.create_task(consume_slow())
-            await asyncio.sleep(0.001)
-            task.cancel()
-            with pytest.raises(asyncio.CancelledError): await task
+        # Cancel only after the transport is awaiting a body read. A timer-based
+        # sleep on the 20 ms client can lose to its deadline on a busy runner.
+        entered = asyncio.Event()
+        class PendingBody(httpx.AsyncByteStream):
+            closed = False
+            async def __aiter__(self):
+                entered.set()
+                await asyncio.Future()
+                yield b""
+            async def aclose(self):
+                self.closed = True
+        body = PendingBody()
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(200, headers={"content-type": "text/event-stream"}, stream=body))) as injected:
+            async with AsyncClient("test", http_client=injected) as client:
+                assert client.timeout == 300
+                stream = await client.model.list()
+                async def consume_pending():
+                    return [event async for event in stream]
+                task = asyncio.create_task(consume_pending())
+                try:
+                    await asyncio.wait_for(entered.wait(), timeout=5)
+                    task.cancel()
+                    with pytest.raises(asyncio.CancelledError): await task
+                    assert stream.response.is_closed
+                    assert body.closed
+                finally:
+                    task.cancel()
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
         async with AsyncClient("test", endpoint=endpoint) as client:
             stream = await client.responses.create({"model": "test", "input": "x", "__case": "invalid-sse"})
             with pytest.raises(ProtocolError): [event async for event in stream]

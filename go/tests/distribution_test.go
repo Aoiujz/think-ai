@@ -78,7 +78,10 @@ func TestGitModuleDownload(t *testing.T) {
 	}
 	writeFile(t, filepath.Join(consumer, "go.mod"), []byte("module example.invalid/consumer\n\ngo 1.26.0\n\nrequire github.com/top-think/think-ai/go v0.1.0\n"))
 	writeFile(t, filepath.Join(consumer, "main.go"), []byte("package main\nimport thinkai \"github.com/top-think/think-ai/go\"\nfunc main(){ _, _ = thinkai.NewClient(\"offline\") }\n"))
-	env := append(baseEnv, "GOWORK=off", "GOENV=off", "GOTOOLCHAIN=local", "GOPROXY=direct", "GOSUMDB=off", "GOPRIVATE=github.com/top-think/think-ai", "GONOPROXY=*", "GONOSUMDB=*", "GOVCS=*:git", "GOMODCACHE="+filepath.Join(workspace, "modcache"))
+	// Keep only this temporary module cache writable so t.TempDir can remove it
+	// as an ordinary user. Retain caller flags and leave the global cache alone.
+	goFlags := strings.TrimSpace(os.Getenv("GOFLAGS") + " -modcacherw")
+	env := append(baseEnv, "GOWORK=off", "GOENV=off", "GOTOOLCHAIN=local", "GOPROXY=direct", "GOSUMDB=off", "GOPRIVATE=github.com/top-think/think-ai", "GONOPROXY=*", "GONOSUMDB=*", "GOVCS=*:git", "GOMODCACHE="+filepath.Join(workspace, "modcache"), "GOFLAGS="+goFlags)
 	output := run(t, consumer, env, "go", "mod", "download", "-json", "github.com/top-think/think-ai/go@v0.1.0")
 	var downloaded struct {
 		Zip   string
@@ -87,6 +90,13 @@ func TestGitModuleDownload(t *testing.T) {
 	}
 	if err := json.Unmarshal(output, &downloaded); err != nil || downloaded.Error != "" || downloaded.Zip == "" {
 		t.Fatalf("module download failed: %s", output)
+	}
+	cachedModule, err := os.Stat(downloaded.Dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cachedModule.Mode().Perm()&0200 == 0 {
+		t.Fatal("temporary module cache must remain owner-writable for cleanup")
 	}
 	moduleZip, err := zip.OpenReader(downloaded.Zip)
 	if err != nil {
